@@ -3,14 +3,14 @@
 
 #include "SDL2/SDL.h"
 #include <vector>
+#include <map>
 
 constexpr int SECONDS_IN_MS = 1000;
 
-class SpriteComponent
+class Animation
 {
     public:
-        SpriteComponent();
-        SpriteComponent(int animationFPS);
+        Animation(int animationFPS);
 
         void setTexture(SDL_Texture* texture);
         SDL_Texture* getTexture();
@@ -20,10 +20,11 @@ class SpriteComponent
         SDL_Rect getCurrentClip();
         SDL_Rect getClipAtIndex(int index);
 
-        bool isAnimated();
         int getTimePerClip();
         int getNumClips();
         void setClipIndex(int index);
+
+        void reset();
 
     private:
         std::vector<SDL_Rect> m_spriteClips;
@@ -31,6 +32,21 @@ class SpriteComponent
 
         int m_timePerClip;
         int m_clipIndex;
+};
+
+class SpriteComponent
+{
+    public:
+        SpriteComponent();
+        ~SpriteComponent();
+
+        void addAnimation(std::string tag, Animation *animation);
+        Animation* getCurrentAnimation();
+        void setCurrentAnimation(std::string tag);
+
+    private:
+        std::map<std::string, Animation*> m_animations;
+        std::string m_currentTag;
 };
 
 #endif

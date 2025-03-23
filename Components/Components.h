@@ -3,5 +3,6 @@
 
 #include "SpriteComponent.h"
 #include "TransformComponent.h"
+#include "VelocityComponent.h"
 
 #endif

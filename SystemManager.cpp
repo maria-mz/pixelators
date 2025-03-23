@@ -1,6 +1,4 @@
-#include "ECS.h"
-
-ISystem::~ISystem() {}
+#include "SystemManager.h"
 
 SystemManager::~SystemManager()
 {
@@ -42,5 +40,13 @@ void SystemManager::update(int time) const
     for (auto it = m_systems.begin(); it != m_systems.end(); ++it)
     {
         it->second->update(time);
+    }
+}
+
+void SystemManager::input(SDL_Event &e)
+{
+    for (auto it = m_systems.begin(); it != m_systems.end(); ++it)
+    {
+        it->second->input(e);
     }
 }

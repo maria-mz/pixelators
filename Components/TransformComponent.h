@@ -7,15 +7,17 @@ class TransformComponent
         TransformComponent();
         TransformComponent(int posX = 0, int posY = 0, int width = 0, int height = 0);
 
-        int getPosX();
-        int getPosY();
-        int getWidth();
-        int getHeight();
+        int posX();
+        int posY();
+        int width();
+        int height();
 
         void setPosX(int posX);
         void setPosY(int posY);
         void setWidth(int width);
         void setHeight(int height);
+
+        void move(int dx, int dy);
 
     private:
         int m_posX, m_posY;

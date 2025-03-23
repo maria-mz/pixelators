@@ -16,22 +16,22 @@ TransformComponent::TransformComponent(int posX, int posY, int width, int height
     m_height = height;
 }
 
-int TransformComponent::getPosX()
+int TransformComponent::posX()
 {
     return m_posX;
 }
 
-int TransformComponent::getPosY()
+int TransformComponent::posY()
 {
     return m_posY;
 }
 
-int TransformComponent::getWidth()
+int TransformComponent::width()
 {
     return m_width;
 }
 
-int TransformComponent::getHeight()
+int TransformComponent::height()
 {
     return m_height;
 }
@@ -54,4 +54,10 @@ void TransformComponent::setWidth(int width)
 void TransformComponent::setHeight(int height)
 {
     m_height = height;
+}
+
+void TransformComponent::move(int dx, int dy)
+{
+    m_posX += dx;
+    m_posY += dy;
 }

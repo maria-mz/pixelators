@@ -4,5 +4,7 @@
 #include "AnimationSystem.h"
 #include "MoveSystem.h"
 #include "RenderSystem.h"
+#include "InputSystem.h"
+// #include "CollisionSystem.h"
 
 #endif

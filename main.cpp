@@ -3,12 +3,13 @@
 #include <string>
 #include <format>
 
-#include "ECS/ECS.h"
-#include "ECS/Components.h"
-#include "ECS/Systems.h"
+#include "SystemManager.h"
+#include "Components/Components.h"
+#include "Systems/Systems.h"
 #include "TextureManager.h"
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_image.h"
+#include "Player.h"
 
 constexpr const char* PX_WINDOW_TITLE = "Pixelators";
 constexpr int PX_WINDOW_WIDTH = 720;
@@ -30,8 +31,9 @@ class App
     private:
         SDL_Window* m_window;
         SDL_Renderer* m_renderer;
-        Entity* m_player;
+        Player* m_player;
         SDL_Texture* m_idle;
+        SDL_Texture* m_running;
         SystemManager* m_systemManager;
 };
 
@@ -41,6 +43,7 @@ App::App()
     m_renderer = nullptr;
     m_player = nullptr;
     m_idle = nullptr;
+    m_running = nullptr;
     m_systemManager = nullptr;
 }
 
@@ -93,31 +96,56 @@ bool App::init()
     if (success)
     {
         m_idle = TextureManager::loadTexture("assets/playerIdleSpriteSheet.png", m_renderer);
+        m_running = TextureManager::loadTexture("assets/playerRunningSpriteSheet.png", m_renderer);
 
-        SpriteComponent *spriteComponent = new SpriteComponent(8);
-        spriteComponent->setTexture(m_idle);
-        spriteComponent->addClip({0, 0, 480, 480});
-        spriteComponent->addClip({480, 0, 480, 480});
-        spriteComponent->addClip({480 * 2, 0, 480, 480});
-        spriteComponent->addClip({0, 480, 480, 480});
-        spriteComponent->addClip({480, 480, 480, 480});
-        spriteComponent->addClip({480 * 2, 480, 480, 480});
+        Animation *idle = new Animation(8);
+        idle->setTexture(m_idle);
+        idle->addClip({0, 0, 480, 480});
+        idle->addClip({480, 0, 480, 480});
+        idle->addClip({480 * 2, 0, 480, 480});
+        idle->addClip({0, 480, 480, 480});
+        idle->addClip({480, 480, 480, 480});
+        idle->addClip({480 * 2, 480, 480, 480});
+
+        Animation *running = new Animation(10);
+        running->setTexture(m_running);
+        running->addClip({0, 0, 480, 480});
+        running->addClip({480, 0, 480, 480});
+        running->addClip({480 * 2, 0, 480, 480});
+        running->addClip({0, 480, 480, 480});
+        running->addClip({480, 480, 480, 480});
+        running->addClip({480 * 2, 480, 480, 480});
+        running->addClip({0, 480 * 2, 480, 480});
+        running->addClip({480, 480 * 2, 480, 480});
+
+        SpriteComponent *spriteComponent = new SpriteComponent();
+        spriteComponent->addAnimation("idle", idle);
+        spriteComponent->addAnimation("running", running);
+        spriteComponent->setCurrentAnimation("running");
 
         TransformComponent *transformComponent = new TransformComponent(0, 0, 128, 128);
+        VelocityComponent *velocityComponent = new VelocityComponent(0, 0, 6);
 
-        m_player = new Entity();
-        m_player->addComponent(spriteComponent);
-        m_player->addComponent(transformComponent);
+        m_player = new Player();
+        m_player->setSpriteComponent(spriteComponent);
+        m_player->setTransformComponent(transformComponent);
+        m_player->setVelocityComponent(velocityComponent);
 
         RenderSystem *renderSystem = new RenderSystem(m_renderer);
-        renderSystem->addEntity(m_player);
-
         AnimationSystem *animationSystem = new AnimationSystem();
-        animationSystem->addEntity(m_player);
+        InputSystem *inputSystem = new InputSystem();
+        MoveSystem *moveSystem = new MoveSystem();
+
+        renderSystem->setPlayer(m_player);
+        animationSystem->setPlayer(m_player);
+        inputSystem->setPlayer(m_player);
+        moveSystem->setPlayer(m_player);
 
         m_systemManager = new SystemManager();
         m_systemManager->addSystem("1-AnimationSystem", animationSystem);
-        m_systemManager->addSystem("2-RenderSystem", renderSystem);
+        m_systemManager->addSystem("2-InputSystem", inputSystem);
+        m_systemManager->addSystem("3-MoveSystem", moveSystem);
+        m_systemManager->addSystem("4-RenderSystem", renderSystem);
     }
 
     return success;
@@ -137,6 +165,7 @@ void App::run()
             {
                 quit = true;
             }
+            m_systemManager->input(event);
         }
 
         m_systemManager->update(SDL_GetTicks());
@@ -152,7 +181,9 @@ App::~App()
     m_window = NULL;
 
     SDL_DestroyTexture(m_idle);
+    SDL_DestroyTexture(m_running);
     m_idle = NULL;
+    m_running = NULL;
 
     delete m_systemManager;
     delete m_player;
