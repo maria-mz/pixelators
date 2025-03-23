@@ -9,11 +9,9 @@
 #include "TextureManager.h"
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_image.h"
+#include "BattleScene.h"
 #include "Player.h"
-
-constexpr const char* PX_WINDOW_TITLE = "Pixelators";
-constexpr int PX_WINDOW_WIDTH = 720;
-constexpr int PX_WINDOW_HEIGHT = 480;
+#include "Constants.h"
 
 class App
 {
@@ -31,7 +29,7 @@ class App
     private:
         SDL_Window* m_window;
         SDL_Renderer* m_renderer;
-        Player* m_player;
+        BattleScene* m_scene;
         SDL_Texture* m_idle;
         SDL_Texture* m_running;
         SystemManager* m_systemManager;
@@ -41,7 +39,7 @@ App::App()
 {
     m_window = nullptr;
     m_renderer = nullptr;
-    m_player = nullptr;
+    m_scene = nullptr;
     m_idle = nullptr;
     m_running = nullptr;
     m_systemManager = nullptr;
@@ -126,26 +124,32 @@ bool App::init()
         TransformComponent *transformComponent = new TransformComponent(0, 0, 128, 128);
         VelocityComponent *velocityComponent = new VelocityComponent(0, 0, 6);
 
-        m_player = new Player();
-        m_player->setSpriteComponent(spriteComponent);
-        m_player->setTransformComponent(transformComponent);
-        m_player->setVelocityComponent(velocityComponent);
+        Player *player = new Player();
+        player->setSpriteComponent(spriteComponent);
+        player->setTransformComponent(transformComponent);
+        player->setVelocityComponent(velocityComponent);
+
+        m_scene = new BattleScene();
+        m_scene->setPlayer(player);
 
         RenderSystem *renderSystem = new RenderSystem(m_renderer);
         AnimationSystem *animationSystem = new AnimationSystem();
         InputSystem *inputSystem = new InputSystem();
         MoveSystem *moveSystem = new MoveSystem();
+        CollisionSystem *collisionSystem = new CollisionSystem();
 
-        renderSystem->setPlayer(m_player);
-        animationSystem->setPlayer(m_player);
-        inputSystem->setPlayer(m_player);
-        moveSystem->setPlayer(m_player);
+        renderSystem->setBattleScene(m_scene);
+        animationSystem->setBattleScene(m_scene);
+        inputSystem->setBattleScene(m_scene);
+        moveSystem->setBattleScene(m_scene);
+        collisionSystem->setBattleScene(m_scene);
 
         m_systemManager = new SystemManager();
         m_systemManager->addSystem("1-AnimationSystem", animationSystem);
         m_systemManager->addSystem("2-InputSystem", inputSystem);
         m_systemManager->addSystem("3-MoveSystem", moveSystem);
-        m_systemManager->addSystem("4-RenderSystem", renderSystem);
+        m_systemManager->addSystem("4-CollisionSystem", collisionSystem);
+        m_systemManager->addSystem("5-RenderSystem", renderSystem);
     }
 
     return success;
@@ -186,7 +190,7 @@ App::~App()
     m_running = NULL;
 
     delete m_systemManager;
-    delete m_player;
+    delete m_scene;
 
     // Quit SDL subsystems
     SDL_Quit();

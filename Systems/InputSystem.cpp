@@ -7,8 +7,8 @@ bool InputSystem::start()
 
 void InputSystem::input(SDL_Event &e)
 {
-    VelocityComponent *velocity = m_player->velocityComponent();
-    SpriteComponent *sprite = m_player->spriteComponent();
+    VelocityComponent *velocity = m_scene->getPlayer()->velocityComponent();
+    SpriteComponent *sprite = m_scene->getPlayer()->spriteComponent();
 
     if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
     {
@@ -36,12 +36,12 @@ void InputSystem::input(SDL_Event &e)
     }
     if (velocity->velX() == 0)
     {
-        m_player->setCurrentState(PlayerState::Idle);
+        m_scene->getPlayer()->setCurrentState(PlayerState::Idle);
         sprite->setCurrentAnimation("idle");
     }
     else
     {
-        m_player->setCurrentState(PlayerState::Running);
+        m_scene->getPlayer()->setCurrentState(PlayerState::Running);
         sprite->setCurrentAnimation("running");
     }
 }

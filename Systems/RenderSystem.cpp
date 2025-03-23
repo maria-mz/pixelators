@@ -23,10 +23,10 @@ void RenderSystem::update(int time)
     SDL_Rect clipQuad;
     SDL_Rect renderQuad;
 
-    SpriteComponent *sprite = m_player->spriteComponent();
+    SpriteComponent *sprite = m_scene->getPlayer()->spriteComponent();
     Animation *animation = sprite->getCurrentAnimation();
-    TransformComponent *transform = m_player->transformComponent();
-    VelocityComponent *velocity = m_player->velocityComponent();
+    TransformComponent *transform = m_scene->getPlayer()->transformComponent();
+    VelocityComponent *velocity = m_scene->getPlayer()->velocityComponent();
 
     renderQuad.x = transform->posX();
     renderQuad.y = transform->posY();

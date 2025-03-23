@@ -12,7 +12,7 @@ void AnimationSystem::input(SDL_Event &e)
 
 void AnimationSystem::update(int time)
 {
-    SpriteComponent *sprite = m_player->spriteComponent();
+    SpriteComponent *sprite = m_scene->getPlayer()->spriteComponent();
     if (sprite)
     {
         Animation *animation = sprite->getCurrentAnimation();

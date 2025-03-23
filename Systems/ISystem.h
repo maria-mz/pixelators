@@ -2,7 +2,7 @@
 #define ISYSTEM_H_
 
 #include "SDL2/SDL.h"
-#include "../Player.h"
+#include "../BattleScene.h"
 
 
 class ISystem
@@ -13,10 +13,10 @@ class ISystem
         virtual void input(SDL_Event &e) = 0;
         virtual void update(int time) = 0;
         virtual void end() = 0;
-        void setPlayer(Player* player) { m_player = player; };
+        void setBattleScene(BattleScene* scene) { m_scene = scene; };
 
     protected:
-        Player* m_player;
+        BattleScene* m_scene;
 };
 
 #endif

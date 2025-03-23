@@ -5,6 +5,6 @@
 #include "MoveSystem.h"
 #include "RenderSystem.h"
 #include "InputSystem.h"
-// #include "CollisionSystem.h"
+#include "CollisionSystem.h"
 
 #endif
