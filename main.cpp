@@ -13,6 +13,23 @@
 #include "Player.h"
 #include "Constants.h"
 
+SDL_Rect createSpriteClip(int pixelsFromLeft,
+                          int pixelsFromTop,
+                          int entityWidth,
+                          int entityHeight,
+                          int row,
+                          int col)
+{
+    // TODO: Use constant for magic 32 (original sprite scale is 32x32) and 15 (scaled up sprite, 480x480)
+    SDL_Rect r;
+    r.x = (pixelsFromLeft * 15) + (col * (32 * 15));
+    r.y = (pixelsFromTop * 15) + (row * (32 * 15));
+    r.w = entityWidth * 15;
+    r.h = entityHeight * 15;
+
+    return r;
+}
+
 class App
 {
     public:
@@ -98,30 +115,30 @@ bool App::init()
 
         Animation *idle = new Animation(8);
         idle->setTexture(m_idle);
-        idle->addClip({0, 0, 480, 480});
-        idle->addClip({480, 0, 480, 480});
-        idle->addClip({480 * 2, 0, 480, 480});
-        idle->addClip({0, 480, 480, 480});
-        idle->addClip({480, 480, 480, 480});
-        idle->addClip({480 * 2, 480, 480, 480});
+        idle->addClip(createSpriteClip(11, 7, 9, 21, 0, 0));
+        idle->addClip(createSpriteClip(11, 7, 9, 21, 0, 1));
+        idle->addClip(createSpriteClip(11, 7, 9, 21, 0, 2));
+        idle->addClip(createSpriteClip(11, 7, 9, 21, 1, 0));
+        idle->addClip(createSpriteClip(11, 7, 9, 21, 1, 1));
+        idle->addClip(createSpriteClip(11, 7, 9, 21, 1, 2));
 
         Animation *running = new Animation(10);
         running->setTexture(m_running);
-        running->addClip({0, 0, 480, 480});
-        running->addClip({480, 0, 480, 480});
-        running->addClip({480 * 2, 0, 480, 480});
-        running->addClip({0, 480, 480, 480});
-        running->addClip({480, 480, 480, 480});
-        running->addClip({480 * 2, 480, 480, 480});
-        running->addClip({0, 480 * 2, 480, 480});
-        running->addClip({480, 480 * 2, 480, 480});
+        running->addClip(createSpriteClip(11, 7, 9, 21, 0, 0));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 0, 1));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 0, 2));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 1, 0));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 1, 1));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 1, 2));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 2, 0));
+        running->addClip(createSpriteClip(11, 7, 9, 21, 2, 1));
 
         SpriteComponent *spriteComponent = new SpriteComponent();
         spriteComponent->addAnimation("idle", idle);
         spriteComponent->addAnimation("running", running);
         spriteComponent->setCurrentAnimation("running");
 
-        TransformComponent *transformComponent = new TransformComponent(0, 0, 128, 128);
+        TransformComponent *transformComponent = new TransformComponent(0, 200, 45, 105);
         VelocityComponent *velocityComponent = new VelocityComponent(0, 0, 6);
 
         Player *player = new Player();
