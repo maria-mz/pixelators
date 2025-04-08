@@ -15,11 +15,11 @@ class NetClient
     public:
         ~NetClient();
 
-        void connectToServer(std::string host, std::string port);
+        bool connectToServer(std::string host, std::string port);
         bool isConnected();
         void disconnect();
 
-        void send(NetMessage &msg);
+        bool send(NetMessage &msg);
         bool recv(NetMessage &msg);
         bool blockingRecv(NetMessage &msg);
 
@@ -37,8 +37,10 @@ NetClient::~NetClient()
 }
 
 
-void NetClient::connectToServer(std::string host, std::string port)
+bool NetClient::connectToServer(std::string host, std::string port)
 {
+    bool success = true;
+
     printf("[CLIENT] Connecting to server at %s:%s\n", host.c_str(), port.c_str());
 
     try
@@ -49,7 +51,20 @@ void NetClient::connectToServer(std::string host, std::string port)
         asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, port);
 
         asio::connect(m_connection->m_socket, endpoints);
+    }
+    catch (std::exception &e)
+    {
+        success = false;
+        printf("[CLIENT] Failed to connect to server: %s\n", e.what());
 
+        if (m_connection->m_socket.is_open())
+        {
+            m_connection->m_socket.close();
+        }
+    }
+
+    if (success)
+    {
         m_connection->startReadLoop();
 
         m_contextThread = std::thread(
@@ -66,35 +81,37 @@ void NetClient::connectToServer(std::string host, std::string port)
             }
         );
     }
-    catch (std::exception &e)
-    {
-        printf("[CLIENT] Failed to connect to server: %s", e.what());
-    }
+
+    return success;
 }
 
 
 bool NetClient::isConnected()
 {
-    return m_connection->m_socket.is_open();
+    return (m_connection && m_connection->m_socket.is_open());
 }
 
 
 void NetClient::disconnect()
 {
-    m_ioContext.stop();
-
-    if (m_connection && m_connection->m_socket.is_open())
+    if (!m_ioContext.stopped())
     {
-        try
+        m_ioContext.stop();
+    }
+
+    // Using try-catch here because even if we check if the socket is open first,
+    // by the time we call close an async read or write in the ASIO context thread
+    // may have already called close -> would throw error anyway
+    try
+    {
+        if (m_connection)
         {
             m_connection->m_socket.close();
         }
-        catch(const std::system_error& e)
-        {
-            // Socket already closed
-        }
-
-        printf("[CLIENT] Disconnected from server\n");
+    }
+    catch(const std::system_error& e)
+    {
+        // Socket already closed
     }
 
     if (m_contextThread.joinable())
@@ -106,12 +123,17 @@ void NetClient::disconnect()
 }
 
 
-void NetClient::send(NetMessage &msg)
+bool NetClient::send(NetMessage &msg)
 {
+    bool ok = false;
+
     if (m_connection)
     {
         m_connection->send(msg);
+        ok = true;
     }
+
+    return ok;
 }
 
 

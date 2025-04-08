@@ -29,6 +29,7 @@ class NetServer
 
         bool isClientConnected(ClientID clientID);
         void disconnectClient(ClientID clientID);
+        void removeClient(ClientID clientID);
 
     private:
         void accept();
@@ -90,8 +91,11 @@ void NetServer::disconnectClient(ClientID clientID)
 {
     std::shared_ptr<NetConnection> client = getClient(clientID);
 
-    if (client && client->m_socket.is_open())
+    if (client)
     {
+        // Using try-catch here because even if we check if the socket is open first,
+        // by the time we call close an async read or write in the ASIO context thread
+        // may have already called close -> would throw error anyway
         try
         {
             client->m_socket.close();
@@ -100,11 +104,14 @@ void NetServer::disconnectClient(ClientID clientID)
         {
             // Socket already closed
         }
-
-        m_clients.erase(clientID);
-
-        printf("[SERVER] Disconnected client %d\n", clientID);
     }
+}
+
+
+void NetServer::removeClient(ClientID clientID)
+{
+    disconnectClient(clientID);
+    m_clients.erase(clientID);
 }
 
 
@@ -139,13 +146,10 @@ void NetServer::shutdown()
 
     for (auto &pair : m_clients)
     {
-        clientIDs.push_back(pair.first);
+        disconnectClient(pair.first);
     }
 
-    for (auto clientID : clientIDs)
-    {
-        disconnectClient(clientID);
-    }
+    m_clients.clear();
 
     if (m_contextThread.joinable())
     {

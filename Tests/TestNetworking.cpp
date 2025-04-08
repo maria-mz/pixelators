@@ -8,14 +8,14 @@
 #include "../Networking/NetMessages.h"
 
 
-#define SOFT_ASSERT_EQ(lhs, rhs)                                                    \
+#define ASSERT_EQ(lhs, rhs)                                                         \
     do {                                                                            \
         auto _lhs = (lhs);                                                          \
         auto _rhs = (rhs);                                                          \
         if (_lhs != _rhs) {                                                         \
             std::stringstream ss;                                                   \
-            ss << "Assert error " #lhs " == " #rhs " Expected: " << _rhs << "\n"    \
-               << "  Actual: " << _lhs << "\n";                                     \
+            ss << "ASSERT_EQ failed: " << #lhs << " != " << #rhs                    \
+            << " (" << _lhs << " != " << _rhs << ")";                               \
             throw std::runtime_error(ss.str());                                     \
         }                                                                           \
     } while (0)
@@ -61,18 +61,18 @@ bool testChannel()
         ch.write(msg_2);
         ch.write(msg_3);
 
-        SOFT_ASSERT_EQ(ch.read_one().header().seq, 1);
-        SOFT_ASSERT_EQ(ch.read_one().header().seq, 2);
-        SOFT_ASSERT_EQ(ch.read_one().header().seq, 3);
+        ASSERT_EQ(ch.read_one().header().seq, 1);
+        ASSERT_EQ(ch.read_one().header().seq, 2);
+        ASSERT_EQ(ch.read_one().header().seq, 3);
 
         // Pushed out of order (should get same results)
         ch.write(msg_3);
         ch.write(msg_1);
         ch.write(msg_2);
 
-        SOFT_ASSERT_EQ(ch.read_one().header().seq, 1);
-        SOFT_ASSERT_EQ(ch.read_one().header().seq, 2);
-        SOFT_ASSERT_EQ(ch.read_one().header().seq, 3);
+        ASSERT_EQ(ch.read_one().header().seq, 1);
+        ASSERT_EQ(ch.read_one().header().seq, 2);
+        ASSERT_EQ(ch.read_one().header().seq, 3);
     }
     catch (std::exception &e)
     {
@@ -110,13 +110,13 @@ bool testConnect()
 
         for (auto &client : clients)
         {
-            SOFT_ASSERT_EQ(client->blockingRecv(msg), true);
-            SOFT_ASSERT_EQ(msg.header().type, NetMessageType::ConnectOk);
+            ASSERT_EQ(client->blockingRecv(msg), true);
+            ASSERT_EQ(msg.header().type, NetMessageType::ConnectOk);
         }
 
         for (auto &client : clients)
         {
-            SOFT_ASSERT_EQ(client->isConnected(), true);
+            ASSERT_EQ(client->isConnected(), true);
         }
     }
     catch (std::exception &e)
@@ -143,20 +143,52 @@ bool testClientDisconnects()
 
         NetMessage inMsg;
 
-        SOFT_ASSERT_EQ(client->blockingRecv(inMsg), true);
-        SOFT_ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(client->blockingRecv(inMsg), true);
+        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
 
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
-        SOFT_ASSERT_EQ(server->isClientConnected(clientID), true);
+        ASSERT_EQ(server->isClientConnected(clientID), true);
 
         client->disconnect();
 
-        inMsg = NetMessage();
+        ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
+        ASSERT_EQ(inMsg.header().type, NetMessageType::Disconnect);
+        ASSERT_EQ(server->isClientConnected(clientID), false);
+    }
+    catch (std::exception &e)
+    {
+        printf("%s\n", e.what());
+        success = false;
+    }
 
-        SOFT_ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
-        SOFT_ASSERT_EQ(inMsg.header().type, NetMessageType::Disconnect);
-        SOFT_ASSERT_EQ(server->isClientConnected(clientID), false);
+    return success;
+}
+
+
+bool testServerDisconnects()
+{
+    bool success = true;
+
+    std::unique_ptr<NetClient> client = std::unique_ptr<NetClient>(new NetClient());
+    std::unique_ptr<NetServer> server = std::unique_ptr<NetServer>(new NetServer(8080));
+
+    try
+    {
+        server->start();
+        client->connectToServer("127.0.0.1", "8080");
+
+        NetMessage inMsg;
+
+        ASSERT_EQ(client->blockingRecv(inMsg), true);
+        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(client->isConnected(), true);
+
+        server->shutdown();
+
+        ASSERT_EQ(client->blockingRecv(inMsg), true);
+        ASSERT_EQ(inMsg.header().type, NetMessageType::Disconnect);
+        ASSERT_EQ(client->isConnected(), false);
     }
     catch (std::exception &e)
     {
@@ -182,8 +214,8 @@ bool testSendMessagesToServer()
 
         NetMessage inMsg;
 
-        SOFT_ASSERT_EQ(client->blockingRecv(inMsg), true);
-        SOFT_ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(client->blockingRecv(inMsg), true);
+        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
 
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
@@ -200,9 +232,9 @@ bool testSendMessagesToServer()
 
         for (int i = 0; i < 1000; i++)
         {
-            SOFT_ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
-            SOFT_ASSERT_EQ(inMsg.header().type, NetMessageType::Data);
-            SOFT_ASSERT_EQ(inMsg.body<int>(), 100 + i);
+            ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
+            ASSERT_EQ(inMsg.header().type, NetMessageType::Data);
+            ASSERT_EQ(inMsg.body<int>(), 100 + i);
         }
     }
     catch (std::exception &e)
@@ -229,8 +261,8 @@ bool testSendMessagesToClient()
 
         NetMessage inMsg;
 
-        SOFT_ASSERT_EQ(client->blockingRecv(inMsg), true);
-        SOFT_ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(client->blockingRecv(inMsg), true);
+        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
 
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
@@ -248,9 +280,9 @@ bool testSendMessagesToClient()
 
         for (int i = 0; i < 1000; i++)
         {
-            SOFT_ASSERT_EQ(client->blockingRecv(inMsg), true);
-            SOFT_ASSERT_EQ(inMsg.header().type, NetMessageType::Data);
-            SOFT_ASSERT_EQ(inMsg.body<int>(), 100 + i);
+            ASSERT_EQ(client->blockingRecv(inMsg), true);
+            ASSERT_EQ(inMsg.header().type, NetMessageType::Data);
+            ASSERT_EQ(inMsg.body<int>(), 100 + i);
         }
     }
     catch (std::exception &e)
@@ -263,12 +295,88 @@ bool testSendMessagesToClient()
 }
 
 
+bool testConnectToUnknownHost()
+{
+    bool success = true;
+
+    std::unique_ptr<NetClient> client = std::unique_ptr<NetClient>(new NetClient());
+
+    try
+    {
+        // Server shouldn't be running at 127.0.0.1:9090
+        ASSERT_EQ(client->connectToServer("127.0.0.1", "9090"), false);
+        ASSERT_EQ(client->isConnected(), false);
+    }
+    catch (std::exception &e)
+    {
+        printf("%s\n", e.what());
+        success = false;
+    }
+
+    return success;
+}
+
+
+bool testClientMethodsWhileNotConnected()
+{
+    bool success = true;
+
+    std::unique_ptr<NetClient> client = std::unique_ptr<NetClient>(new NetClient());
+
+    try
+    {
+        NetMessage inMsg;
+
+        ASSERT_EQ(client->send(inMsg), false);
+        ASSERT_EQ(client->recv(inMsg), false);
+        ASSERT_EQ(client->blockingRecv(inMsg), false);
+    }
+    catch (std::exception &e)
+    {
+        printf("%s\n", e.what());
+        success = false;
+    }
+
+    return success;
+}
+
+
+bool testServerMethodsOnUnconnectedClient()
+{
+    bool success = true;
+
+    std::unique_ptr<NetServer> server = std::unique_ptr<NetServer>(new NetServer(8080));
+
+    try
+    {
+        int randomClientID = 10000;
+
+        NetMessage inMsg;
+
+        ASSERT_EQ(server->send(randomClientID, inMsg), false);
+        ASSERT_EQ(server->recv(randomClientID, inMsg), false);
+        ASSERT_EQ(server->blockingRecv(randomClientID, inMsg), false);
+    }
+    catch (std::exception &e)
+    {
+        printf("%s\n", e.what());
+        success = false;
+    }
+
+    return success;
+}
+
+
 int main() {
-    RUN_TEST(testChannel, 5);
+    RUN_TEST(testChannel, 10);
     RUN_TEST(testConnect, 10);
     RUN_TEST(testClientDisconnects, 10);
+    RUN_TEST(testServerDisconnects, 10);
     RUN_TEST(testSendMessagesToServer, 10);
     RUN_TEST(testSendMessagesToClient, 10);
+    RUN_TEST(testConnectToUnknownHost, 10);
+    RUN_TEST(testClientMethodsWhileNotConnected, 10);
+    RUN_TEST(testServerMethodsOnUnconnectedClient, 10);
 
     printf("\n### Results ###\n");
 
