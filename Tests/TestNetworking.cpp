@@ -6,6 +6,7 @@
 #include "../Networking/NetClient.h"
 #include "../Networking/NetServer.h"
 #include "../Networking/NetMessages.h"
+#include "../Utils/TSPriorityQueue.h"
 
 
 #define ASSERT_EQ(lhs, rhs)                                                         \
@@ -38,41 +39,45 @@
 static std::map<std::string, bool> g_testResults;
 
 
-bool testChannel()
+bool testPriorityQueue()
 {
     bool success = true;
 
     try
     {
-        Channel<NetMessage> ch;
-        ch.setOrderFunc([](NetMessage &msg) { return msg.header().seq; });
+        TSPriorityQueue<NetMessage> pQueue(
+            [](const NetMessage &a, const NetMessage &b)
+            {
+                return a.header.seq > b.header.seq;
+            }
+        );
 
         NetMessage msg_1;
-        msg_1.header().seq = 1;
+        msg_1.header.seq = 1;
 
         NetMessage msg_2;
-        msg_2.header().seq = 2;
+        msg_2.header.seq = 2;
 
         NetMessage msg_3;
-        msg_3.header().seq = 3;
+        msg_3.header.seq = 3;
 
         // Pushed in order of timestamp
-        ch.write(msg_1);
-        ch.write(msg_2);
-        ch.write(msg_3);
+        pQueue.push(msg_1);
+        pQueue.push(msg_2);
+        pQueue.push(msg_3);
 
-        ASSERT_EQ(ch.read_one().header().seq, 1);
-        ASSERT_EQ(ch.read_one().header().seq, 2);
-        ASSERT_EQ(ch.read_one().header().seq, 3);
+        ASSERT_EQ(pQueue.pop().header.seq, 1);
+        ASSERT_EQ(pQueue.pop().header.seq, 2);
+        ASSERT_EQ(pQueue.pop().header.seq, 3);
 
         // Pushed out of order (should get same results)
-        ch.write(msg_3);
-        ch.write(msg_1);
-        ch.write(msg_2);
+        pQueue.push(msg_3);
+        pQueue.push(msg_1);
+        pQueue.push(msg_2);
 
-        ASSERT_EQ(ch.read_one().header().seq, 1);
-        ASSERT_EQ(ch.read_one().header().seq, 2);
-        ASSERT_EQ(ch.read_one().header().seq, 3);
+        ASSERT_EQ(pQueue.pop().header.seq, 1);
+        ASSERT_EQ(pQueue.pop().header.seq, 2);
+        ASSERT_EQ(pQueue.pop().header.seq, 3);
     }
     catch (std::exception &e)
     {
@@ -111,7 +116,7 @@ bool testConnect()
         for (auto &client : clients)
         {
             ASSERT_EQ(client->blockingRecv(msg), true);
-            ASSERT_EQ(msg.header().type, NetMessageType::ConnectOk);
+            ASSERT_EQ(msg.header.type, NetMessageType::ConnectOk);
         }
 
         for (auto &client : clients)
@@ -144,7 +149,7 @@ bool testClientDisconnects()
         NetMessage inMsg;
 
         ASSERT_EQ(client->blockingRecv(inMsg), true);
-        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(inMsg.header.type, NetMessageType::ConnectOk);
 
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
@@ -153,7 +158,7 @@ bool testClientDisconnects()
         client->disconnect();
 
         ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
-        ASSERT_EQ(inMsg.header().type, NetMessageType::Disconnect);
+        ASSERT_EQ(inMsg.header.type, NetMessageType::Disconnect);
         ASSERT_EQ(server->isClientConnected(clientID), false);
     }
     catch (std::exception &e)
@@ -181,13 +186,13 @@ bool testServerDisconnects()
         NetMessage inMsg;
 
         ASSERT_EQ(client->blockingRecv(inMsg), true);
-        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(inMsg.header.type, NetMessageType::ConnectOk);
         ASSERT_EQ(client->isConnected(), true);
 
         server->shutdown();
 
         ASSERT_EQ(client->blockingRecv(inMsg), true);
-        ASSERT_EQ(inMsg.header().type, NetMessageType::Disconnect);
+        ASSERT_EQ(inMsg.header.type, NetMessageType::Disconnect);
         ASSERT_EQ(client->isConnected(), false);
     }
     catch (std::exception &e)
@@ -215,7 +220,7 @@ bool testSendMessagesToServer()
         NetMessage inMsg;
 
         ASSERT_EQ(client->blockingRecv(inMsg), true);
-        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(inMsg.header.type, NetMessageType::ConnectOk);
 
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
@@ -233,7 +238,7 @@ bool testSendMessagesToServer()
         for (int i = 0; i < 1000; i++)
         {
             ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
-            ASSERT_EQ(inMsg.header().type, NetMessageType::Data);
+            ASSERT_EQ(inMsg.header.type, NetMessageType::Data);
             ASSERT_EQ(inMsg.body<int>(), 100 + i);
         }
     }
@@ -262,7 +267,7 @@ bool testSendMessagesToClient()
         NetMessage inMsg;
 
         ASSERT_EQ(client->blockingRecv(inMsg), true);
-        ASSERT_EQ(inMsg.header().type, NetMessageType::ConnectOk);
+        ASSERT_EQ(inMsg.header.type, NetMessageType::ConnectOk);
 
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
@@ -281,7 +286,7 @@ bool testSendMessagesToClient()
         for (int i = 0; i < 1000; i++)
         {
             ASSERT_EQ(client->blockingRecv(inMsg), true);
-            ASSERT_EQ(inMsg.header().type, NetMessageType::Data);
+            ASSERT_EQ(inMsg.header.type, NetMessageType::Data);
             ASSERT_EQ(inMsg.body<int>(), 100 + i);
         }
     }
@@ -368,7 +373,7 @@ bool testServerMethodsOnUnconnectedClient()
 
 
 int main() {
-    RUN_TEST(testChannel, 10);
+    RUN_TEST(testPriorityQueue, 10);
     RUN_TEST(testConnect, 10);
     RUN_TEST(testClientDisconnects, 10);
     RUN_TEST(testServerDisconnects, 10);

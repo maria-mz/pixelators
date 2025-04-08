@@ -41,25 +41,20 @@ struct ConnectOkBody
 struct NetMessage
 {
     public:
-        NetMessage() : m_header{} {}
+        NetMessage() : header{} {}
 
-        NetMessage(NetMessageType messageType, u_int16_t seq = 0) : m_header{messageType, 0, seq} {}
+        NetMessage(NetMessageType messageType, u_int16_t seq = 0) : header{messageType, 0, seq} {}
 
         template <typename T>
         NetMessage(NetMessageType messageType, const T &data, u_int16_t seq = 0)
-            : m_header{messageType, 0, seq}
+            : header{messageType, 0, seq}
         {
             static_assert(std::is_trivially_copyable<T>::value,
                 "Message body must be trivially copyable");
 
-            m_body.resize(sizeof(T));
-            std::memcpy(m_body.data(), &data, sizeof(T));
-            m_header.size = sizeof(T);
-        }
-
-        NetMessageHeader &header()
-        {
-            return m_header;
+            bodyRaw.resize(sizeof(T));
+            std::memcpy(bodyRaw.data(), &data, sizeof(T));
+            header.size = sizeof(T);
         }
 
         template <typename T>
@@ -68,19 +63,20 @@ struct NetMessage
             static_assert(std::is_trivially_copyable<T>::value,
                           "Message body must be trivially copyable");
 
-            if (m_body.size() != sizeof(T))
+            if (bodyRaw.size() != sizeof(T))
             {
                 throw std::runtime_error("Message body size doesn't match type size");
             }
 
             T data;
-            std::memcpy(&data, m_body.data(), sizeof(T));
+            std::memcpy(&data, bodyRaw.data(), sizeof(T));
             return data;
         }
 
+        NetMessageHeader header;
+
     private:
-        NetMessageHeader m_header;
-        std::vector<uint8_t> m_body;
+        std::vector<uint8_t> bodyRaw;
 
         friend class NetConnection;
 };

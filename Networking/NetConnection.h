@@ -8,8 +8,7 @@
 #include <asio.hpp>
 
 #include "NetMessages.h"
-#include "../Utils/Channel.h"
-#include "../Utils/Time.h"
+#include "../Utils/TSPriorityQueue.h"
 
 
 class NetConnection : public std::enable_shared_from_this<NetConnection>
@@ -27,11 +26,11 @@ class NetConnection : public std::enable_shared_from_this<NetConnection>
         u_int32_t m_id;
 
     private:
-        NetConnection(asio::io_context &io_context) : m_socket(io_context)
-        {
-            m_inMessages.setOrderFunc([](NetMessage &msg) { return msg.header().seq; });
-            m_outMessages.setOrderFunc([](NetMessage &msg) { return msg.header().seq; });
-        }
+        NetConnection(asio::io_context &io_context)
+        : m_socket(io_context)
+        , m_inMessages([](const NetMessage &a, const NetMessage &b) { return a.header.seq > b.header.seq; })
+        , m_outMessages([](const NetMessage &a, const NetMessage &b) { return a.header.seq > b.header.seq; })
+        {}
 
         void readHeader();
         void readBody();
@@ -43,8 +42,9 @@ class NetConnection : public std::enable_shared_from_this<NetConnection>
 
         NetMessage m_currentMsgIn;
         NetMessage m_currentMsgOut;
-        Channel<NetMessage> m_inMessages;
-        Channel<NetMessage> m_outMessages;
+
+        TSPriorityQueue<NetMessage> m_inMessages;
+        TSPriorityQueue<NetMessage> m_outMessages;
 };
 
 
@@ -60,20 +60,20 @@ void NetConnection::readHeader()
 
     asio::async_read(
         m_socket,
-        asio::buffer((&m_currentMsgIn.m_header), sizeof(NetMessageHeader)),
+        asio::buffer((&m_currentMsgIn.header), sizeof(NetMessageHeader)),
         [this](const std::error_code &ec, size_t length)
         {
             if (!ec)
             {
-                if (m_currentMsgIn.m_header.size > 0)
+                if (m_currentMsgIn.header.size > 0)
                 {
-                    m_currentMsgIn.m_body.resize(m_currentMsgIn.m_header.size);
+                    m_currentMsgIn.bodyRaw.resize(m_currentMsgIn.header.size);
                     readBody();
                 }
                 else
                 {
                     // Read a whole message! (header only)
-                    m_inMessages.write(m_currentMsgIn);
+                    m_inMessages.push(m_currentMsgIn);
 
                     readHeader();
                 }
@@ -81,7 +81,7 @@ void NetConnection::readHeader()
             else
             {
                 m_socket.close();
-                m_inMessages.write(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
             }
         }
     );
@@ -92,20 +92,20 @@ void NetConnection::readBody()
 {
     asio::async_read(
         m_socket,
-        asio::buffer((m_currentMsgIn.m_body.data()), m_currentMsgIn.m_body.size()),
+        asio::buffer((m_currentMsgIn.bodyRaw.data()), m_currentMsgIn.bodyRaw.size()),
         [this](const std::error_code &ec, size_t length)
         {
             if (!ec)
             {
                 // Read a whole message! (header and body)
-                m_inMessages.write(m_currentMsgIn);
+                m_inMessages.push(m_currentMsgIn);
 
                 readHeader();
             }
             else
             {
                 m_socket.close();
-                m_inMessages.write(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
             }
         }
     );
@@ -114,33 +114,33 @@ void NetConnection::readBody()
 
 void NetConnection::writeHeader()
 {
-    if (!m_outMessages.front(m_currentMsgOut))
+    if (!m_outMessages.top(m_currentMsgOut))
     {
         return;
     }
 
     asio::async_write(
         m_socket,
-        asio::buffer(&m_currentMsgOut.m_header, sizeof(NetMessageHeader)),
+        asio::buffer(&m_currentMsgOut.header, sizeof(NetMessageHeader)),
         [this](std::error_code ec, std::size_t length)
         {
             if (!ec)
             {
-                if (m_currentMsgOut.m_header.size > 0)
+                if (m_currentMsgOut.header.size > 0)
                 {
                     writeBody();
                 }
                 else
                 {
                     // printf("[NET_CONNECTION: %d] WROTE MESSAGE, seq: %d\n", m_id, m_currentMsgOut.header().seq);
-                    m_outMessages.read_one();
+                    m_outMessages.pop();
                     writeHeader();
                 }
             }
             else
             {
                 m_socket.close();
-                m_inMessages.write(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
             }
         }
     );
@@ -151,19 +151,19 @@ void NetConnection::writeBody()
 {
     asio::async_write(
         m_socket,
-        asio::buffer((m_currentMsgOut.m_body.data()), m_currentMsgOut.m_body.size()),
+        asio::buffer((m_currentMsgOut.bodyRaw.data()), m_currentMsgOut.bodyRaw.size()),
         [this](std::error_code ec, std::size_t length)
         {
             if (!ec)
             {
-                m_outMessages.read_one();
+                m_outMessages.pop();
                 // printf("[NET_CONNECTION: %d] WROTE MESSAGE, seq: %d\n", m_id, m_currentMsgOut.header().seq);
                 writeHeader();
             }
             else
             {
                 m_socket.close();
-                m_inMessages.write(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
             }
         }
     );
@@ -178,16 +178,16 @@ void NetConnection::startReadLoop()
 
 void NetConnection::send(NetMessage &msg)
 {
-    msg.header().seq = m_outSeq++;
+    msg.header.seq = m_outSeq++;
 
     if (m_outMessages.empty())
     {
-        m_outMessages.write(msg);
+        m_outMessages.push(msg);
         writeHeader();
     }
     else
     {
-        m_outMessages.write(msg);
+        m_outMessages.push(msg);
     }
 }
 
@@ -202,9 +202,9 @@ bool NetConnection::recv(NetMessage &msg)
 
     NetMessage tempMsg;
 
-    if (m_inMessages.front(tempMsg) && tempMsg.header().seq == m_nextInSeq)
+    if (m_inMessages.top(tempMsg) && tempMsg.header.seq == m_nextInSeq)
     {
-        msg = m_inMessages.read_one();
+        msg = m_inMessages.pop();
         m_nextInSeq++;
         ok = true;
     }
@@ -221,7 +221,9 @@ bool NetConnection::blockingRecv(NetMessage &msg)
 
     // printf("[NET_CONNECTION: %d] Waiting for next seq: %d\n", m_id, m_nextInSeq);
 
-    ok = m_inMessages.read_one_with_order(msg, m_nextInSeq);
+    ok = m_inMessages.pop_matching(
+        msg, [this](const NetMessage &m){ return m.header.seq == m_nextInSeq; }
+    );
 
     if (ok)
     {
