@@ -1,5 +1,8 @@
 #include "Game.h"
 
+static Vector2D PLAYER_1_SPAWN_POSITION(180, 200);
+static Vector2D PLAYER_2_SPAWN_POSITION(540, 200);
+
 Game::Game()
 {
     m_window = nullptr;
@@ -101,8 +104,10 @@ bool Game::initTextures()
     return success;
 }
 
-bool Game::init()
+bool Game::init(bool isHost)
 {
+    m_isHost = isHost;
+
     bool success = false;
 
     if (initWindow())
@@ -119,19 +124,54 @@ bool Game::init()
     if (success)
     {
         m_player = new Player();
-        m_player->setPosition(0, 200);
-        m_player->setTransform(45, 105);
-        m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
-        m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
-
         m_opponent = new Player();
-        m_opponent->setPosition(500, 200);
-        m_opponent->setTransform(45, 105);
+
+        m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
         m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
+
+        m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
         m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
+
+        m_network = std::unique_ptr<NetworkManager>(new NetworkManager(m_isHost));
+        m_network->init();
+
+        // If not host, try to connect to the server, probably want a better way
+        // to do this in the future, like user presses a button to join, then
+        // try to connect
+        if (!m_isHost)
+        {
+            int retries = 0;
+            while (retries < 3 && !m_network->isConnectedToServer())
+            {
+                printf("Trying to connect to server...\n");
+                m_network->connectToServer();
+                retries++;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+
+            success = m_network->isConnectedToServer();
+        }
     }
 
     return success;
+}
+
+void Game::spawnPlayers()
+{
+    m_player->setTransform(45, 105);
+    m_opponent->setTransform(45, 105);
+
+    if (m_isHost)
+    {
+        m_player->setPosition(PLAYER_1_SPAWN_POSITION.x, PLAYER_1_SPAWN_POSITION.y);
+        m_opponent->setPosition(PLAYER_2_SPAWN_POSITION.x, PLAYER_2_SPAWN_POSITION.y);
+    }
+    else
+    {
+        m_player->setPosition(PLAYER_2_SPAWN_POSITION.x, PLAYER_2_SPAWN_POSITION.y);
+        m_opponent->setPosition(PLAYER_1_SPAWN_POSITION.x, PLAYER_1_SPAWN_POSITION.y);
+    }
 }
 
 void Game::run()
@@ -142,6 +182,11 @@ void Game::run()
 
     int lastTick = SDL_GetTicks();
 
+    spawnPlayers();
+
+    int opponentEvents = 0;
+    Event opponentEvent = EVENT_NONE;
+
     while (!quit)
     {
         while (SDL_PollEvent(&event) != 0)
@@ -151,7 +196,24 @@ void Game::run()
                 quit = true;
             }
             m_player->input(SDLEventTranslator::translate(event));
+            m_network->sendPlayerInputEvent(SDLEventTranslator::translate(event));
         }
+
+        // Input opponent events
+        while (opponentEvents < MAX_OPPONENT_EVENTS_PER_TICK)
+        {
+            opponentEvent = m_network->receiveOpponentInputEvent();
+
+            if (opponentEvent == EVENT_NONE)
+            {
+                break;
+            }
+            else
+            {
+                m_opponent->input(opponentEvent);
+            }
+        }
+        opponentEvents = 0; // reset
 
         int currentTick = SDL_GetTicks();
         int deltaTime = currentTick - lastTick;
