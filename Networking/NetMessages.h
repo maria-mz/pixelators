@@ -14,18 +14,6 @@ enum class NetMessageType : u_int32_t
     Data
 };
 
-
-std::ostream& operator<<(std::ostream& os, NetMessageType type) {
-    switch (type) {
-        case NetMessageType::ConnectOk:         return os << "ConnectOk";
-        case NetMessageType::ConnectDenied:     return os << "ConnectDenied";
-        case NetMessageType::Disconnect:        return os << "Disconnect";
-        case NetMessageType::Data:              return os << "Data";
-
-        default:                                return os << "Unknown";
-    }
-}
-
 struct NetMessageHeader
 {
     NetMessageType type;
