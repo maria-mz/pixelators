@@ -5,9 +5,9 @@ Game::Game()
     m_window = nullptr;
     m_renderer = nullptr;
     m_player = nullptr;
+    m_opponent = nullptr;
     m_idle = nullptr;
     m_running = nullptr;
-    m_renderSystem = nullptr;
     m_gameTickRate = 16; // ~16 ms per tick (~60 updates per second)
 }
 
@@ -24,8 +24,8 @@ Game::~Game()
     m_idle = nullptr;
     m_running = nullptr;
 
-    delete m_renderSystem;
     delete m_player;
+    delete m_opponent;
 
     // Quit SDL subsystems
     SDL_Quit();
@@ -124,7 +124,11 @@ bool Game::init()
         m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
         m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
 
-        m_renderSystem = new RenderSystem(m_renderer, m_player);
+        m_opponent = new Player();
+        m_opponent->setPosition(500, 200);
+        m_opponent->setTransform(45, 105);
+        m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
+        m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
     }
 
     return success;
@@ -146,21 +150,24 @@ void Game::run()
             {
                 quit = true;
             }
-            // TODO: Add player event to event bus for sending over the network
             m_player->input(SDLEventTranslator::translate(event));
         }
-
-        // TODO: Read opponent events from network and call its input method
-
-        // TODO: Send player's events over the network
 
         int currentTick = SDL_GetTicks();
         int deltaTime = currentTick - lastTick;
         lastTick = currentTick;
 
-        // TODO: update opponent too
         m_player->update(deltaTime);
-        m_renderSystem->update();
+        m_opponent->update(deltaTime);
+
+        // Render
+        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
+        SDL_RenderClear(m_renderer);
+
+        m_player->render(m_renderer);
+        m_opponent->render(m_renderer);
+
+        SDL_RenderPresent(m_renderer);
 
         const int frameTime = SDL_GetTicks() - currentTick;
         if (frameTime < m_gameTickRate)

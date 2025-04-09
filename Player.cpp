@@ -195,6 +195,23 @@ void Player::update(int deltaTime)
     boundPosition();
 }
 
+void Player::render(SDL_Renderer *renderer)
+{
+    SDL_Rect clipQuad;
+    SDL_Rect renderQuad;
+
+    Animation *animation = m_sprite->getAnimator()->getCurrentAnimation();
+
+    renderQuad.x = m_position->x;
+    renderQuad.y = m_position->y;
+    renderQuad.w = m_transform->width;
+    renderQuad.h = m_transform->height;
+
+    clipQuad = animation->getCurrentFrame();
+
+    SDL_RenderCopyEx(renderer, animation->getTexture(), &clipQuad, &renderQuad, 0.0, NULL, animation->getFlip());
+}
+
 void Player::changeState(PlayerState *newState)
 {
     m_currentState->exit(*this);

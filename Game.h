@@ -8,7 +8,6 @@
 #include "SDL2/SDL_image.h"
 
 #include "Player.h"
-#include "RenderSystem.h"
 #include "TextureManager.h"
 
 class Game
@@ -29,9 +28,9 @@ class Game
         SDL_Window *m_window;
         SDL_Renderer *m_renderer;
         Player *m_player;
+        Player *m_opponent;
         SDL_Texture *m_idle;
         SDL_Texture *m_running;
-        RenderSystem *m_renderSystem;
         int m_gameTickRate;
 };
 

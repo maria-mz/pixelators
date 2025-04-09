@@ -71,6 +71,7 @@ class Player
 
         void input(Event event);
         void update(int deltaTime);
+        void render(SDL_Renderer *renderer);
 
     // private:
         void changeState(PlayerState *newState);
