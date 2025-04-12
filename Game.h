@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <chrono>
+#include <thread>
 
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_image.h"
@@ -12,7 +13,10 @@
 #include "TextureManager.h"
 #include "NetworkManager.h"
 
-constexpr int MAX_OPPONENT_EVENTS_PER_TICK = 10;
+constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per tick (~60 updates per second)
+
+const Vector2D PLAYER_1_SPAWN_POSITION(180, 200);
+const Vector2D PLAYER_2_SPAWN_POSITION(540, 200);
 
 class Game
 {
@@ -31,14 +35,16 @@ class Game
 
         void spawnPlayers();
 
-        // todo: use smart pointers ?
+        void handleOpponentMsg(GameMessage &msg);
+        void sendPlayerMovement();
+
+        // todo: use smart pointers
         SDL_Window *m_window;
         SDL_Renderer *m_renderer;
         Player *m_player;
         Player *m_opponent;
         SDL_Texture *m_idle;
         SDL_Texture *m_running;
-        int m_gameTickRate;
 
         bool m_isHost;
 

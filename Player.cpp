@@ -41,11 +41,11 @@ void IdleState::input(Player &player, Event event)
     if (player.m_inputManager->isKeyPressed(ACTION_MOVE_LEFT) ||
         player.m_inputManager->isKeyPressed(ACTION_MOVE_RIGHT))
     {
-        player.changeState(new RunningState());
+        player.changeState(PlayerStateName::Running);
     }
 }
 
-void IdleState::update(Player &player, int deltaTime)
+void IdleState::update(Player &player, int deltaTime, bool updatePhysics)
 {
 
 }
@@ -74,13 +74,16 @@ void RunningState::input(Player &player, Event event)
     if (!player.m_inputManager->isKeyPressed(ACTION_MOVE_LEFT) &&
         !player.m_inputManager->isKeyPressed(ACTION_MOVE_RIGHT))
     {
-        player.changeState(new IdleState());
+        player.changeState(PlayerStateName::Idle);
     }
 }
 
-void RunningState::update(Player &player, int deltaTime)
+void RunningState::update(Player &player, int deltaTime, bool updatePhysics)
 {
-    player.m_position->x += deltaTime * player.m_velocity->x;
+    if (updatePhysics)
+    {
+        player.m_position->x += deltaTime * player.m_velocity->x;
+    }
 
     Animation *animation = player.m_sprite->getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_RUNNING);
 
@@ -188,7 +191,7 @@ void Player::input(Event event)
     m_currentState->input(*this, event);
 }
 
-void Player::update(int deltaTime)
+void Player::update(int deltaTime, bool updatePhysics)
 {
     m_currentState->update(*this, deltaTime);
     m_sprite->getAnimator()->updateCurrentAnimation(deltaTime);
@@ -212,11 +215,23 @@ void Player::render(SDL_Renderer *renderer)
     SDL_RenderCopyEx(renderer, animation->getTexture(), &clipQuad, &renderQuad, 0.0, NULL, animation->getFlip());
 }
 
-void Player::changeState(PlayerState *newState)
+void Player::changeState(PlayerStateName state)
 {
     m_currentState->exit(*this);
     delete m_currentState;
-    m_currentState = newState;
+
+    switch (state)
+    {
+        case PlayerStateName::Idle:
+            m_currentState = new IdleState();
+            break;
+        case PlayerStateName::Running:
+            m_currentState = new RunningState();
+            break;
+        case PlayerStateName::None:
+            throw std::logic_error("Can't change Player state to 'None'");
+    }
+
     m_currentState->enter(*this);
 }
 
@@ -230,4 +245,9 @@ void Player::boundPosition()
     {
         m_position->x = PX_WINDOW_WIDTH - m_transform->width;
     }
+}
+
+PlayerStateName Player::getState()
+{
+    return m_currentState->name();
 }

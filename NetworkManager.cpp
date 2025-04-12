@@ -38,44 +38,79 @@ bool NetworkManager::isConnectedToServer()
     }
 }
 
-void NetworkManager::sendPlayerInputEvent(Event event)
+void NetworkManager::setOnOpponentMsg(std::function<void(GameMessage &msg)> onOpponentMsg)
 {
-    NetMessage msg{NetMessageType::Data, GameMessage{event}};
+    m_onOpponentMsgCallback = std::move(onOpponentMsg);
+}
 
-    if (m_isHost)
+void NetworkManager::start()
+{
+    if (!m_isRunning)
     {
-        m_server->broadcast(msg);
-    }
-    else
-    {
-        m_client->send(msg);
+        m_isRunning = true;
+
+        m_receiveThread = std::thread(
+            [this]()
+            {
+                GameMessage msg;
+
+                while (m_isRunning)
+                {
+                    if (receiveOpponentMsg(msg))
+                    {
+                        m_onOpponentMsgCallback(msg);
+                    }
+                }
+            }
+        );
     }
 }
 
-Event NetworkManager::receiveOpponentInputEvent()
+void NetworkManager::sendPlayerMsg(GameMessage &msg)
 {
-    NetMessage msg;
+    NetMessage netMsg{NetMessageType::Data, msg};
+
+    // printf("Sending PLAYER State. msg.posX=%f, msg.posY=%f, msg.state=%d\n", msg.posX, msg.posY, msg.state);
+
+    if (m_isHost)
+    {
+        m_server->broadcast(netMsg);
+    }
+    else
+    {
+        m_client->send(netMsg);
+    }
+}
+
+bool NetworkManager::receiveOpponentMsg(GameMessage &msg)
+{
+    NetMessage netMsg;
+    bool ok = false;
 
     if (m_isHost)
     {
         // uh.. opponent client id hardcoded for now
-        m_server->recv(10000, msg);
+        m_server->blockingRecv(10000, netMsg);
     }
     else
     {
-        m_client->recv(msg);
+        m_client->blockingRecv(netMsg);
     }
 
-    if (msg.header.type == NetMessageType::Data)
+    if (netMsg.header.type == NetMessageType::Data)
     {
-        return msg.body<GameMessage>().event;
+        msg = netMsg.body<GameMessage>();
+        // printf("Received OPPONENT State. msg.posX=%f, msg.posY=%f, msg.state=%d\n", msg.posX, msg.posY, msg.state);
+        ok = true;
     }
 
-    return EVENT_NONE;
+    return ok;
 }
 
 void NetworkManager::shutdown()
 {
+    m_isRunning = false;
+
     if (m_server)
     {
         m_server->shutdown();
@@ -83,5 +118,11 @@ void NetworkManager::shutdown()
     if (m_client)
     {
         m_client->disconnect();
+    }
+
+    if (m_receiveThread.joinable())
+    {
+        printf("[NETWORK] Joining receive thread\n");
+        m_receiveThread.join();
     }
 }

@@ -28,6 +28,13 @@ class InputManager
 
 class Player;
 
+enum class PlayerStateName
+{
+    None,
+    Idle,
+    Running
+};
+
 // Interface for all states
 class PlayerState
 {
@@ -36,24 +43,30 @@ class PlayerState
 
         virtual void enter(Player &player) {}
         virtual void input(Player &player, Event event) {}
-        virtual void update(Player &player, int deltaTime) {}
+        virtual void update(Player &player, int deltaTime, bool updatePhysics = true) {}
         virtual void exit(Player &player) {}
+
+        virtual PlayerStateName name() { return PlayerStateName::None; }
 };
 
 class IdleState : public PlayerState {
     public:
         void enter(Player &player) override;
         void input(Player &player, Event event) override;
-        void update(Player &player, int deltaTime) override;
+        void update(Player &player, int deltaTime, bool updatePhysics = true) override;
         void exit(Player &player) override;
+
+        PlayerStateName name() override { return PlayerStateName::Idle; }
 };
 
 class RunningState : public PlayerState {
     public:
         void enter(Player &player) override;
         void input(Player &player, Event event) override;
-        void update(Player &player, int deltaTime) override;
+        void update(Player &player, int deltaTime, bool updatePhysics = true) override;
         void exit(Player &player) override;
+
+        PlayerStateName name() override { return PlayerStateName::Running; }
 };
 
 class Player
@@ -64,17 +77,20 @@ class Player
         Player();
         ~Player();
 
+        void setAnimationTexture(int animationTag, SDL_Texture *texture);
+
         void setPosition(float x, float y);
         void setVelocity(float x, float y);
         void setTransform(int width, int height);
-        void setAnimationTexture(int animationTag, SDL_Texture *texture);
 
         void input(Event event);
-        void update(int deltaTime);
+        void update(int deltaTime, bool updatePhysics = true);
         void render(SDL_Renderer *renderer);
 
+        PlayerStateName getState();
+
     // private:
-        void changeState(PlayerState *newState);
+        void changeState(PlayerStateName state);
         void boundPosition();
 
         Vector2D<float> *m_position;
