@@ -9,6 +9,8 @@
 #include "Networking/NetMessages.h"
 #include "Player.h"
 
+// TODO: Hardcoded for now
+constexpr const char *SERVER_HOST = "127.0.0.1";
 constexpr int SERVER_PORT = 8080;
 
 struct GameMessage
@@ -27,7 +29,7 @@ class NetworkManager
 
         void init();
 
-        bool connectToServer();
+        bool connectToServer(int maxRetries = 3, int waitBetweenRetriesMs = 1000);
         bool isConnectedToServer();
 
         void setOnOpponentMsg(std::function<void(GameMessage &msg)> onOpponentMsg);
@@ -48,7 +50,7 @@ class NetworkManager
         std::thread m_receiveThread;
         bool m_isRunning;
 
-        std::function<void(GameMessage &msg)> m_onOpponentMsgCallback = nullptr;
+        std::function<void(GameMessage &msg)> m_onOpponentMsgCallback = [](GameMessage &msg){};
 };
 
 #endif

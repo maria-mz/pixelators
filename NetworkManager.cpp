@@ -13,7 +13,7 @@ void NetworkManager::init()
     }
 }
 
-bool NetworkManager::connectToServer()
+bool NetworkManager::connectToServer(int maxRetries, int waitBetweenRetriesMs)
 {
     if (m_isHost)
     {
@@ -21,8 +21,17 @@ bool NetworkManager::connectToServer()
     }
     else
     {
-        // hardcoded host for now
-        return m_client->connectToServer("127.0.0.1", std::to_string(SERVER_PORT));
+        int retries = 0;
+        while (retries < maxRetries && !isConnectedToServer())
+        {
+            printf("Trying to connect to server...\n");
+            m_client->connectToServer(SERVER_HOST, std::to_string(SERVER_PORT));
+            retries++;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(waitBetweenRetriesMs));
+        }
+
+        return isConnectedToServer();
     }
 }
 

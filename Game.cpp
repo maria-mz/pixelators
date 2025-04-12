@@ -138,21 +138,14 @@ bool Game::init(bool isHost)
         // try to connect
         if (!m_isHost)
         {
-            int retries = 0;
-            while (retries < 3 && !m_network->isConnectedToServer())
-            {
-                printf("Trying to connect to server...\n");
-                m_network->connectToServer();
-                retries++;
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            }
-
-            success = m_network->isConnectedToServer();
+            success = m_network->connectToServer();
         }
 
-        m_network->setOnOpponentMsg([this](GameMessage &msg){ handleOpponentMsg(msg); });
-        m_network->start();
+        if (success)
+        {
+            m_network->setOnOpponentMsg([this](GameMessage &msg){ handleOpponentMsg(msg); });
+            m_network->start();
+        }
     }
 
     return success;
