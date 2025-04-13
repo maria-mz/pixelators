@@ -1,10 +1,12 @@
 #ifndef PLAYER_H_
 #define PLAYER_H_
 
+#include <map>
+
 #include "SDL2/SDL.h"
 
 #include "Constants.h"
-#include "Event.h"
+#include "Input.h"
 #include "Sprite.h"
 #include "Transform.h"
 #include "Vector2D.h"
@@ -19,11 +21,11 @@ class InputManager
     public:
         InputManager();
 
-        void input(Event event);
-        bool isKeyPressed(Action action);
+        void input(InputEvent inputEvent);
+        bool isKeyPressed(Input action);
 
     private:
-        bool m_keyState[ACTION_COUNT];
+        std::unordered_map<Input, bool> m_keyState;
 };
 
 class Player;
@@ -42,8 +44,8 @@ class PlayerState
         virtual ~PlayerState() = default;
 
         virtual void enter(Player &player) {}
-        virtual void input(Player &player, Event event) {}
-        virtual void update(Player &player, int deltaTime, bool updatePhysics = true) {}
+        virtual void input(Player &player, InputEvent inputEvent) {}
+        virtual void update(Player &player, int deltaTime) {}
         virtual void exit(Player &player) {}
 
         virtual PlayerStateName name() { return PlayerStateName::None; }
@@ -52,8 +54,8 @@ class PlayerState
 class IdleState : public PlayerState {
     public:
         void enter(Player &player) override;
-        void input(Player &player, Event event) override;
-        void update(Player &player, int deltaTime, bool updatePhysics = true) override;
+        void input(Player &player, InputEvent inputEvent) override;
+        void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
         PlayerStateName name() override { return PlayerStateName::Idle; }
@@ -62,8 +64,8 @@ class IdleState : public PlayerState {
 class RunningState : public PlayerState {
     public:
         void enter(Player &player) override;
-        void input(Player &player, Event event) override;
-        void update(Player &player, int deltaTime, bool updatePhysics = true) override;
+        void input(Player &player, InputEvent inputEvent) override;
+        void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
         PlayerStateName name() override { return PlayerStateName::Running; }
@@ -83,8 +85,8 @@ class Player
         void setVelocity(float x, float y);
         void setTransform(int width, int height);
 
-        void input(Event event);
-        void update(int deltaTime, bool updatePhysics = true);
+        void input(InputEvent inputEvent);
+        void update(int deltaTime);
         void render(SDL_Renderer *renderer);
 
         PlayerStateName getState();

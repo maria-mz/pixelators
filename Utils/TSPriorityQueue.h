@@ -58,7 +58,7 @@ class TSPriorityQueue
         }
 
         // TODO: Have a way to cancel this?
-        bool pop_matching(T& item, MatchPredicate predicate, int timeout = 500)
+        bool pop_matching(T& item, MatchPredicate predicate, int timeout = -1)
         {
             auto wait_cond = [this, &predicate]()
             {

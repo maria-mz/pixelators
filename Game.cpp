@@ -4,8 +4,6 @@ Game::Game()
 {
     m_window = nullptr;
     m_renderer = nullptr;
-    m_player = nullptr;
-    m_opponent = nullptr;
     m_idle = nullptr;
     m_running = nullptr;
 }
@@ -22,9 +20,6 @@ Game::~Game()
     SDL_DestroyTexture(m_running);
     m_idle = nullptr;
     m_running = nullptr;
-
-    delete m_player;
-    delete m_opponent;
 
     // Quit SDL subsystems
     SDL_Quit();
@@ -121,8 +116,8 @@ bool Game::init(bool isHost)
 
     if (success)
     {
-        m_player = new Player();
-        m_opponent = new Player();
+        m_player = std::unique_ptr<Player>(new Player());
+        m_opponent = std::unique_ptr<Player>(new Player());
 
         m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
         m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
@@ -130,7 +125,7 @@ bool Game::init(bool isHost)
         m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
         m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
 
-        m_network = std::unique_ptr<NetworkManager>(new NetworkManager(m_isHost));
+        m_network = std::shared_ptr<NetworkManager>(new NetworkManager(m_isHost));
         m_network->init();
 
         // If not host, try to connect to the server, probably want a better way
@@ -139,12 +134,6 @@ bool Game::init(bool isHost)
         if (!m_isHost)
         {
             success = m_network->connectToServer();
-        }
-
-        if (success)
-        {
-            m_network->setOnOpponentMsg([this](GameMessage &msg){ handleOpponentMsg(msg); });
-            m_network->start();
         }
     }
 
@@ -166,75 +155,105 @@ void Game::spawnPlayers()
         m_player->setPosition(PLAYER_2_SPAWN_POSITION.x, PLAYER_2_SPAWN_POSITION.y);
         m_opponent->setPosition(PLAYER_1_SPAWN_POSITION.x, PLAYER_1_SPAWN_POSITION.y);
     }
+
+    // Set initial net opponent data
+    m_opponentNetcode.setNetPlayerData({
+        {m_opponent->m_position->x, m_opponent->m_position->y},
+        {m_opponent->m_velocity->x, m_opponent->m_velocity->y}
+    });
 }
 
-void Game::handleOpponentMsg(GameMessage &msg)
+void Game::handleOpponentNetMsgs()
 {
-    m_opponent->setPosition(msg.posX, msg.posY);
-    m_opponent->setVelocity(msg.velX, msg.velY);
+    GameMessage opponentMsg;
 
-    if (m_opponent->getState() != msg.state)
+    while (m_network->receiveOpponentMsg(opponentMsg))
     {
-        m_opponent->changeState(msg.state);
+        // Right now all game messages are update messages
+        m_opponentUpdatesBuffer.push_back(opponentMsg);
     }
 }
 
-void Game::sendPlayerMovement()
+void Game::render()
 {
-    GameMessage msg;
+    SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
+    SDL_RenderClear(m_renderer);
 
-    msg.posX = m_player->m_position->x;
-    msg.posY = m_player->m_position->y;
-    msg.velX = m_player->m_velocity->x;
-    msg.velY = m_player->m_velocity->y;
-    msg.state = m_player->getState();
+    m_player->render(m_renderer);
+    m_opponent->render(m_renderer);
 
-    m_network->sendPlayerMsg(msg);
+    SDL_RenderPresent(m_renderer);
+}
+
+void Game::updateOpponent(int deltaTime)
+{
+    GameMessage updateMsg;
+
+    while (m_opponentUpdatesBuffer.size() > MIN_OPPONENT_LAG_FRAMES)
+    {
+        updateMsg = m_opponentUpdatesBuffer.front();
+        m_opponentUpdatesBuffer.pop_front();
+
+        if (updateMsg.inputEvent != InputEvent::None)
+        {
+            m_opponent->input(updateMsg.inputEvent);
+        }
+
+        m_opponentNetcode.updateNetState(updateMsg);
+    }
+
+    m_opponent->update(deltaTime);
+    m_opponentNetcode.syncPlayerWithNetState(*m_opponent);
 }
 
 void Game::run()
 {
+    spawnPlayers();
+
     bool quit = false;
 
+    FrameTimer frameTimer(GAME_TICK_RATE_MS);
+
+    GameMessage playerUpdateMsg;
+
     SDL_Event event;
-
-    int lastTick = SDL_GetTicks();
-
-    spawnPlayers();
+    InputEvent playerInputEvent;
 
     while (!quit)
     {
+        frameTimer.startFrame();
+
+        playerInputEvent = InputEvent::None;
+
         while (SDL_PollEvent(&event) != 0)
         {
             if (event.type == SDL_QUIT)
             {
                 quit = true;
             }
-            m_player->input(SDLEventTranslator::translate(event));
+            playerInputEvent = SDLEventTranslator::translate(event);
+            if (playerInputEvent != InputEvent::None)
+            {
+                m_player->input(playerInputEvent);
+                break; // Input only one player event per frame
+            }
         }
 
-        int currentTick = SDL_GetTicks();
-        int deltaTime = currentTick - lastTick;
-        lastTick = currentTick;
+        handleOpponentNetMsgs();
 
-        m_player->update(deltaTime);
-        m_opponent->update(deltaTime, false); // False for don't update physics (since that comes from network)
+        m_player->update(frameTimer.getDeltaTime());
+        updateOpponent(frameTimer.getDeltaTime());
 
-        sendPlayerMovement();
+        playerUpdateMsg.posX = m_player->m_position->x;
+        playerUpdateMsg.posY = m_player->m_position->y;
+        playerUpdateMsg.velX = m_player->m_velocity->x;
+        playerUpdateMsg.velY = m_player->m_velocity->y;
+        playerUpdateMsg.inputEvent = playerInputEvent;
 
-        // Render
-        SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
-        SDL_RenderClear(m_renderer);
+        m_network->sendPlayerMsg(playerUpdateMsg);
 
-        m_player->render(m_renderer);
-        m_opponent->render(m_renderer);
+        render();
 
-        SDL_RenderPresent(m_renderer);
-
-        const int frameTime = SDL_GetTicks() - currentTick;
-        if (frameTime < GAME_TICK_RATE_MS)
-        {
-            SDL_Delay(GAME_TICK_RATE_MS - frameTime);
-        }
+        frameTimer.endFrame();
     }
 }

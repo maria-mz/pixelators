@@ -47,34 +47,6 @@ bool NetworkManager::isConnectedToServer()
     }
 }
 
-void NetworkManager::setOnOpponentMsg(std::function<void(GameMessage &msg)> onOpponentMsg)
-{
-    m_onOpponentMsgCallback = std::move(onOpponentMsg);
-}
-
-void NetworkManager::start()
-{
-    if (!m_isRunning)
-    {
-        m_isRunning = true;
-
-        m_receiveThread = std::thread(
-            [this]()
-            {
-                GameMessage msg;
-
-                while (m_isRunning)
-                {
-                    if (receiveOpponentMsg(msg))
-                    {
-                        m_onOpponentMsgCallback(msg);
-                    }
-                }
-            }
-        );
-    }
-}
-
 void NetworkManager::sendPlayerMsg(GameMessage &msg)
 {
     NetMessage netMsg{NetMessageType::Data, msg};
@@ -99,11 +71,16 @@ bool NetworkManager::receiveOpponentMsg(GameMessage &msg)
     if (m_isHost)
     {
         // uh.. opponent client id hardcoded for now
-        m_server->blockingRecv(10000, netMsg);
+        m_server->recv(10000, netMsg);
     }
     else
     {
-        m_client->blockingRecv(netMsg);
+        m_client->recv(netMsg);
+    }
+
+    if (netMsg.header.type == NetMessageType::Disconnect)
+    {
+        printf("Disconnected!\n");
     }
 
     if (netMsg.header.type == NetMessageType::Data)
@@ -118,8 +95,6 @@ bool NetworkManager::receiveOpponentMsg(GameMessage &msg)
 
 void NetworkManager::shutdown()
 {
-    m_isRunning = false;
-
     if (m_server)
     {
         m_server->shutdown();
@@ -127,11 +102,5 @@ void NetworkManager::shutdown()
     if (m_client)
     {
         m_client->disconnect();
-    }
-
-    if (m_receiveThread.joinable())
-    {
-        printf("[NETWORK] Joining receive thread\n");
-        m_receiveThread.join();
     }
 }

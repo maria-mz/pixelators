@@ -3,8 +3,7 @@
 
 #include <iostream>
 #include <stdio.h>
-#include <chrono>
-#include <thread>
+#include <deque>
 
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_image.h"
@@ -12,11 +11,16 @@
 #include "Player.h"
 #include "TextureManager.h"
 #include "NetworkManager.h"
+#include "Netcode.h"
+#include "FrameTimer.h"
+#include "Utils/Time.h"
 
-constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per tick (~60 updates per second)
+constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per frame (~60 updates per second)
 
 const Vector2D PLAYER_1_SPAWN_POSITION(180, 200);
 const Vector2D PLAYER_2_SPAWN_POSITION(540, 200);
+
+constexpr const int MIN_OPPONENT_LAG_FRAMES = 1;
 
 class Game
 {
@@ -35,20 +39,24 @@ class Game
 
         void spawnPlayers();
 
-        void handleOpponentMsg(GameMessage &msg);
-        void sendPlayerMovement();
+        void handleOpponentNetMsgs();
+        void updateOpponent(int deltaTime);
 
-        // todo: use smart pointers
+        void render();
+
         SDL_Window *m_window;
         SDL_Renderer *m_renderer;
-        Player *m_player;
-        Player *m_opponent;
         SDL_Texture *m_idle;
         SDL_Texture *m_running;
 
+        std::unique_ptr<Player> m_player;
+        std::unique_ptr<Player> m_opponent;
+
         bool m_isHost;
 
-        std::unique_ptr<NetworkManager> m_network;
+        std::shared_ptr<NetworkManager> m_network;
+        Netcode m_opponentNetcode;
+        std::deque<GameMessage> m_opponentUpdatesBuffer;
 };
 
 #endif

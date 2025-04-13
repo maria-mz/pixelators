@@ -2,23 +2,25 @@
 
 InputManager::InputManager()
 {
-    m_keyState[ACTION_MOVE_LEFT] = false;
-    m_keyState[ACTION_MOVE_RIGHT] = false;
+    m_keyState = {
+        {Input::MoveLeft, false},
+        {Input::MoveRight, false}
+    };
 }
 
-void InputManager::input(Event event)
+void InputManager::input(InputEvent inputEvent)
 {
-    switch (event)
+    switch (inputEvent)
     {
-        case EVENT_MOVE_LEFT_PRESSED: m_keyState[ACTION_MOVE_LEFT] = true; break;
-        case EVENT_MOVE_RIGHT_PRESSED: m_keyState[ACTION_MOVE_RIGHT] = true; break;
-        case EVENT_MOVE_LEFT_RELEASED: m_keyState[ACTION_MOVE_LEFT] = false; break;
-        case EVENT_MOVE_RIGHT_RELEASED: m_keyState[ACTION_MOVE_RIGHT] = false; break;
+        case InputEvent::MoveLeft_Pressed: m_keyState[Input::MoveLeft] = true; break;
+        case InputEvent::MoveRight_Pressed: m_keyState[Input::MoveRight] = true; break;
+        case InputEvent::MoveLeft_Released: m_keyState[Input::MoveLeft] = false; break;
+        case InputEvent::MoveRight_Released: m_keyState[Input::MoveRight] = false; break;
         default: break;
     }
 }
 
-bool InputManager::isKeyPressed(Action action)
+bool InputManager::isKeyPressed(Input action)
 {
     return m_keyState[action];
 }
@@ -29,23 +31,23 @@ void IdleState::enter(Player &player)
     player.m_sprite->getAnimator()->setCurrentAnimation(PLAYER_ANIMATION_TAG_IDLE);
 }
 
-void IdleState::input(Player &player, Event event)
+void IdleState::input(Player &player, InputEvent inputEvent)
 {
-    switch (event)
+    switch (inputEvent)
     {
-        case EVENT_MOVE_LEFT_PRESSED: player.m_velocity->x -= player.speed; break;
-        case EVENT_MOVE_RIGHT_PRESSED:  player.m_velocity->x += player.speed; break;
+        case InputEvent::MoveLeft_Pressed: player.m_velocity->x -= player.speed; break;
+        case InputEvent::MoveRight_Pressed:  player.m_velocity->x += player.speed; break;
         default: break;
     }
 
-    if (player.m_inputManager->isKeyPressed(ACTION_MOVE_LEFT) ||
-        player.m_inputManager->isKeyPressed(ACTION_MOVE_RIGHT))
+    if (player.m_inputManager->isKeyPressed(Input::MoveLeft) ||
+        player.m_inputManager->isKeyPressed(Input::MoveRight))
     {
         player.changeState(PlayerStateName::Running);
     }
 }
 
-void IdleState::update(Player &player, int deltaTime, bool updatePhysics)
+void IdleState::update(Player &player, int deltaTime)
 {
 
 }
@@ -60,30 +62,27 @@ void RunningState::enter(Player &player)
     player.m_sprite->getAnimator()->setCurrentAnimation(PLAYER_ANIMATION_TAG_RUNNING);
 }
 
-void RunningState::input(Player &player, Event event)
+void RunningState::input(Player &player, InputEvent inputEvent)
 {
-    switch (event)
+    switch (inputEvent)
     {
-        case EVENT_MOVE_LEFT_PRESSED: player.m_velocity->x -= player.speed; break;
-        case EVENT_MOVE_RIGHT_PRESSED:  player.m_velocity->x += player.speed; break;
-        case EVENT_MOVE_LEFT_RELEASED: player.m_velocity->x += player.speed; break;
-        case EVENT_MOVE_RIGHT_RELEASED: player.m_velocity->x -= player.speed; break;
+        case InputEvent::MoveLeft_Pressed: player.m_velocity->x -= player.speed; break;
+        case InputEvent::MoveRight_Pressed:  player.m_velocity->x += player.speed; break;
+        case InputEvent::MoveLeft_Released: player.m_velocity->x += player.speed; break;
+        case InputEvent::MoveRight_Released: player.m_velocity->x -= player.speed; break;
         default: break;
     }
 
-    if (!player.m_inputManager->isKeyPressed(ACTION_MOVE_LEFT) &&
-        !player.m_inputManager->isKeyPressed(ACTION_MOVE_RIGHT))
+    if (!player.m_inputManager->isKeyPressed(Input::MoveLeft) &&
+        !player.m_inputManager->isKeyPressed(Input::MoveRight))
     {
         player.changeState(PlayerStateName::Idle);
     }
 }
 
-void RunningState::update(Player &player, int deltaTime, bool updatePhysics)
+void RunningState::update(Player &player, int deltaTime)
 {
-    if (updatePhysics)
-    {
-        player.m_position->x += deltaTime * player.m_velocity->x;
-    }
+    player.m_position->x += deltaTime * player.m_velocity->x;
 
     Animation *animation = player.m_sprite->getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_RUNNING);
 
@@ -185,13 +184,13 @@ void Player::setAnimationTexture(int animationTag, SDL_Texture *texture)
     m_sprite->getAnimator()->getAnimation(animationTag)->setTexture(texture);
 }
 
-void Player::input(Event event)
+void Player::input(InputEvent inputEvent)
 {
-    m_inputManager->input(event);
-    m_currentState->input(*this, event);
+    m_inputManager->input(inputEvent);
+    m_currentState->input(*this, inputEvent);
 }
 
-void Player::update(int deltaTime, bool updatePhysics)
+void Player::update(int deltaTime)
 {
     m_currentState->update(*this, deltaTime);
     m_sprite->getAnimator()->updateCurrentAnimation(deltaTime);
