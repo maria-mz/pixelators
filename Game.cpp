@@ -31,11 +31,11 @@ bool Game::initWindow()
     }
     else
     {
-        m_window = SDL_CreateWindow(PX_WINDOW_TITLE,
+        m_window = SDL_CreateWindow(Constants::WINDOW_TITLE,
                                    SDL_WINDOWPOS_UNDEFINED,
                                    SDL_WINDOWPOS_UNDEFINED,
-                                   PX_WINDOW_WIDTH,
-                                   PX_WINDOW_HEIGHT,
+                                   Constants::WINDOW_WIDTH,
+                                   Constants::WINDOW_HEIGHT,
                                    SDL_WINDOW_SHOWN);
 
         if (m_window == nullptr)
@@ -80,8 +80,8 @@ bool Game::initTextures()
     bool success = true;
 
     if (
-        !Resources::textures.loadTexture("assets/player-idle-spritesheet.png", m_renderer) ||
-        !Resources::textures.loadTexture("assets/player-running-spritesheet.png", m_renderer)
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer)
     )
     {
         success = false;

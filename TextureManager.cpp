@@ -10,19 +10,19 @@ TextureManager::~TextureManager()
     }
 }
 
-bool TextureManager::loadTexture(std::string filePath, SDL_Renderer* renderer)
+bool TextureManager::loadTexture(const char *file, SDL_Renderer* renderer)
 {
-    removeTexture(filePath);
+    removeTexture(file);
 
     bool success = true;
 
     SDL_Texture* newTexture = NULL;
 
-    SDL_Surface* loadedSurface = IMG_Load(filePath.c_str());
+    SDL_Surface* loadedSurface = IMG_Load(file);
     if (loadedSurface == NULL)
     {
         success = false;
-        printf("Image failed to load! path=[%s] error=[%s]", filePath.c_str(), IMG_GetError());
+        printf("Image failed to load! file=[%s] error=[%s]", file, IMG_GetError());
     }
     else
     {
@@ -31,8 +31,8 @@ bool TextureManager::loadTexture(std::string filePath, SDL_Renderer* renderer)
         {
             success = false;
 
-            printf("Texture couldn't be created from image! path=[%s] error=[%s]",
-                    filePath.c_str(),
+            printf("Texture couldn't be created from image! file=[%s] error=[%s]",
+                    file,
                     IMG_GetError());
         }
 
@@ -41,28 +41,28 @@ bool TextureManager::loadTexture(std::string filePath, SDL_Renderer* renderer)
 
     if (newTexture)
     {
-        m_textures[filePath] = newTexture;
+        m_textures[file] = newTexture;
     }
 
     return success;
 }
 
-SDL_Texture* TextureManager::getTexture(std::string filePath)
+SDL_Texture* TextureManager::getTexture(const char *file)
 {
-    if (m_textures.find(filePath) != m_textures.end())
+    if (m_textures.find(file) != m_textures.end())
     {
-        return m_textures[filePath];
+        return m_textures[file];
     }
 
     return nullptr;
 }
 
-void TextureManager::removeTexture(std::string filePath)
+void TextureManager::removeTexture(const char *file)
 {
-    SDL_Texture *texture = getTexture(filePath);
+    SDL_Texture *texture = getTexture(file);
     if (texture)
     {
         SDL_DestroyTexture(texture);
-        m_textures.erase(filePath);
+        m_textures.erase(file);
     }
 }

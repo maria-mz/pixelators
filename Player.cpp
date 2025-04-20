@@ -57,6 +57,16 @@ void IdleState::exit(Player &player)
 
 }
 
+PlayerStateName IdleState::name()
+{
+    return PlayerStateName::Idle;
+}
+
+SDL_Texture *IdleState::texture()
+{
+    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_IDLE);
+};
+
 void RunningState::enter(Player &player)
 {
     player.m_sprite->getAnimator()->setCurrentAnimation(PLAYER_ANIMATION_TAG_RUNNING);
@@ -101,6 +111,15 @@ void RunningState::exit(Player &player)
 
 }
 
+PlayerStateName RunningState::name()
+{
+    return PlayerStateName::Running;
+}
+
+SDL_Texture *RunningState::texture()
+{
+    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUNNING);
+};
 
 Player::Player()
 {
@@ -236,9 +255,9 @@ void Player::boundPosition()
     {
         m_position->x = 0;
     }
-    else if (m_position->x > (PX_WINDOW_WIDTH - m_transform->width))
+    else if (m_position->x > (Constants::WINDOW_WIDTH - m_transform->width))
     {
-        m_position->x = PX_WINDOW_WIDTH - m_transform->width;
+        m_position->x = Constants::WINDOW_WIDTH - m_transform->width;
     }
 }
 

@@ -60,15 +60,8 @@ class IdleState : public PlayerState {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override
-        {
-            return PlayerStateName::Idle;
-        }
-
-        SDL_Texture *texture() override
-        {
-            return Resources::textures.getTexture("assets/player-idle-spritesheet.png");
-        };
+        PlayerStateName name() override;
+        SDL_Texture *texture() override;
 };
 
 class RunningState : public PlayerState {
@@ -78,15 +71,8 @@ class RunningState : public PlayerState {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override
-        {
-            return PlayerStateName::Running;
-        }
-
-        SDL_Texture *texture() override
-        {
-            return Resources::textures.getTexture("assets/player-running-spritesheet.png");
-        };
+        PlayerStateName name() override;
+        SDL_Texture *texture() override;
 };
 
 class Player

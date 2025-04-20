@@ -1,8 +1,16 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
-constexpr const char* PX_WINDOW_TITLE = "Pixelators";
-constexpr int PX_WINDOW_WIDTH = 720;
-constexpr int PX_WINDOW_HEIGHT = 480;
+namespace Constants
+{
+    // Window
+    constexpr const char* WINDOW_TITLE = "Pixelators";
+    constexpr int WINDOW_WIDTH = 720;
+    constexpr int WINDOW_HEIGHT = 480;
+
+    // Assets
+    constexpr const char* FILE_SPRITE_PLAYER_IDLE = "assets/player-idle-spritesheet.png";
+    constexpr const char* FILE_SPRITE_PLAYER_RUNNING = "assets/player-running-spritesheet.png";
+}
 
 #endif
