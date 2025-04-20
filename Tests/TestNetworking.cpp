@@ -6,7 +6,7 @@
 #include "../Networking/NetClient.h"
 #include "../Networking/NetServer.h"
 #include "../Networking/NetMessages.h"
-#include "../Utils/TSPriorityQueue.h"
+#include "../Utils/TSQueue.h"
 
 
 #define ASSERT_EQ(lhs, rhs)                                                         \
@@ -50,45 +50,21 @@ std::ostream& operator<<(std::ostream& os, NetMessageType type) {
 static std::map<std::string, bool> g_testResults;
 
 
-bool testPriorityQueue()
+bool testTSQueue()
 {
     bool success = true;
 
     try
     {
-        TSPriorityQueue<NetMessage> pQueue(
-            [](const NetMessage &a, const NetMessage &b)
-            {
-                return a.header.seq > b.header.seq;
-            }
-        );
+        TSQueue<int> tsQueue;
 
-        NetMessage msg_1;
-        msg_1.header.seq = 1;
+        tsQueue.push(1);
+        tsQueue.push(2);
+        tsQueue.push(3);
 
-        NetMessage msg_2;
-        msg_2.header.seq = 2;
-
-        NetMessage msg_3;
-        msg_3.header.seq = 3;
-
-        // Pushed in order of timestamp
-        pQueue.push(msg_1);
-        pQueue.push(msg_2);
-        pQueue.push(msg_3);
-
-        ASSERT_EQ(pQueue.pop().header.seq, 1);
-        ASSERT_EQ(pQueue.pop().header.seq, 2);
-        ASSERT_EQ(pQueue.pop().header.seq, 3);
-
-        // Pushed out of order (should get same results)
-        pQueue.push(msg_3);
-        pQueue.push(msg_1);
-        pQueue.push(msg_2);
-
-        ASSERT_EQ(pQueue.pop().header.seq, 1);
-        ASSERT_EQ(pQueue.pop().header.seq, 2);
-        ASSERT_EQ(pQueue.pop().header.seq, 3);
+        ASSERT_EQ(tsQueue.pop(), 1);
+        ASSERT_EQ(tsQueue.pop(), 2);
+        ASSERT_EQ(tsQueue.pop(), 3);
     }
     catch (std::exception &e)
     {
@@ -223,6 +199,8 @@ bool testSendMessagesToServer()
     std::unique_ptr<NetClient> client = std::unique_ptr<NetClient>(new NetClient());
     std::unique_ptr<NetServer> server = std::unique_ptr<NetServer>(new NetServer(8080));
 
+    int numMsgsToSend = 30000;
+
     try
     {
         server->start();
@@ -236,7 +214,7 @@ bool testSendMessagesToServer()
         int clientID = inMsg.body<ConnectOkBody>().assignedClientID;
 
         std::vector<NetMessage> outMsgs;
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < numMsgsToSend; i++)
         {
             outMsgs.push_back(NetMessage{NetMessageType::Data, 100 + i});
         }
@@ -246,7 +224,7 @@ bool testSendMessagesToServer()
             client->send(msg);
         }
 
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < numMsgsToSend; i++)
         {
             ASSERT_EQ(server->blockingRecv(clientID, inMsg), true);
             ASSERT_EQ(inMsg.header.type, NetMessageType::Data);
@@ -270,6 +248,8 @@ bool testSendMessagesToClient()
     std::unique_ptr<NetClient> client = std::unique_ptr<NetClient>(new NetClient());
     std::unique_ptr<NetServer> server = std::unique_ptr<NetServer>(new NetServer(8080));
 
+    int numMsgsToSend = 30000;
+
     try
     {
         server->start();
@@ -284,7 +264,7 @@ bool testSendMessagesToClient()
 
         std::vector<NetMessage> outMsgs;
 
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < numMsgsToSend; i++)
         {
             outMsgs.push_back(NetMessage{NetMessageType::Data, 100 + i});
         }
@@ -294,7 +274,7 @@ bool testSendMessagesToClient()
             server->send(clientID, msg);
         }
 
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < numMsgsToSend; i++)
         {
             ASSERT_EQ(client->blockingRecv(inMsg), true);
             ASSERT_EQ(inMsg.header.type, NetMessageType::Data);
@@ -384,15 +364,15 @@ bool testServerMethodsOnUnconnectedClient()
 
 
 int main() {
-    RUN_TEST(testPriorityQueue, 10);
-    RUN_TEST(testConnect, 10);
-    RUN_TEST(testClientDisconnects, 10);
-    RUN_TEST(testServerDisconnects, 10);
-    RUN_TEST(testSendMessagesToServer, 10);
-    RUN_TEST(testSendMessagesToClient, 10);
-    RUN_TEST(testConnectToUnknownHost, 10);
-    RUN_TEST(testClientMethodsWhileNotConnected, 10);
-    RUN_TEST(testServerMethodsOnUnconnectedClient, 10);
+    RUN_TEST(testTSQueue, 30);
+    RUN_TEST(testConnect, 30);
+    RUN_TEST(testClientDisconnects, 30);
+    RUN_TEST(testServerDisconnects, 30);
+    RUN_TEST(testSendMessagesToServer, 30);
+    RUN_TEST(testSendMessagesToClient, 30);
+    RUN_TEST(testConnectToUnknownHost, 30);
+    RUN_TEST(testClientMethodsWhileNotConnected, 30);
+    RUN_TEST(testServerMethodsOnUnconnectedClient, 30);
 
     printf("\n### Results ###\n");
 

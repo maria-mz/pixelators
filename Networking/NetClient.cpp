@@ -42,9 +42,11 @@ bool NetClient::connectToServer(std::string host, std::string port)
             {
                 try
                 {
+                    printf("[CLIENT] ASIO context starting\n");
                     m_ioContext.run();
+                    printf("[CLIENT] ASIO context stopped\n");
                 }
-                catch(const std::system_error& e)
+                catch (const std::system_error& e)
                 {
                     // Socket already closed
                 }

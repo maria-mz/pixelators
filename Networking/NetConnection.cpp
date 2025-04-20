@@ -1,5 +1,16 @@
 #include "NetConnection.h"
+#include <iostream>
 
+// std::ostream& operator<<(std::ostream& os, NetMessageType type) {
+//     switch (type) {
+//         case NetMessageType::ConnectOk:         return os << "ConnectOk";
+//         case NetMessageType::ConnectDenied:     return os << "ConnectDenied";
+//         case NetMessageType::Disconnect:        return os << "Disconnect";
+//         case NetMessageType::Data:              return os << "Data";
+
+//         default:                                return os << "Unknown";
+//     }
+// }
 
 std::shared_ptr<NetConnection> NetConnection::create(asio::io_context &io_context)
 {
@@ -25,7 +36,6 @@ void NetConnection::readHeader()
                 }
                 else
                 {
-                    // Read a whole message! (header only)
                     m_inMessages.push(m_currentMsgIn);
 
                     readHeader();
@@ -35,7 +45,7 @@ void NetConnection::readHeader()
             {
                 printf("[NET] Message read fail\n");
                 m_socket.close();
-                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
         }
     );
@@ -60,7 +70,7 @@ void NetConnection::readBody()
             {
                 printf("[NET] Message read fail\n");
                 m_socket.close();
-                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
         }
     );
@@ -69,7 +79,7 @@ void NetConnection::readBody()
 
 void NetConnection::writeHeader()
 {
-    if (!m_outMessages.top(m_currentMsgOut))
+    if (!m_outMessages.front(m_currentMsgOut))
     {
         return;
     }
@@ -87,16 +97,19 @@ void NetConnection::writeHeader()
                 }
                 else
                 {
-                    // printf("[NET_CONNECTION: %d] WROTE MESSAGE, seq: %d\n", m_id, m_currentMsgOut.header().seq);
                     m_outMessages.pop();
-                    writeHeader();
+
+                    if (!m_outMessages.empty())
+                    {
+                        writeHeader();
+                    }
                 }
             }
             else
             {
                 printf("[NET] Message write fail\n");
                 m_socket.close();
-                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
         }
     );
@@ -113,14 +126,17 @@ void NetConnection::writeBody()
             if (!ec)
             {
                 m_outMessages.pop();
-                // printf("[NET_CONNECTION: %d] WROTE MESSAGE, seq: %d\n", m_id, m_currentMsgOut.header().seq);
-                writeHeader();
+
+                if (!m_outMessages.empty())
+                {
+                    writeHeader();
+                }
             }
             else
             {
                 printf("[NET] Message write fail\n");
                 m_socket.close();
-                m_inMessages.push(NetMessage{NetMessageType::Disconnect, m_nextInSeq});
+                m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
         }
     );
@@ -135,57 +151,53 @@ void NetConnection::startReadLoop()
 
 void NetConnection::send(NetMessage &msg)
 {
-    msg.header.seq = m_outSeq++;
-
-    if (m_outMessages.empty())
-    {
-        m_outMessages.push(msg);
-        writeHeader();
-    }
-    else
-    {
-        m_outMessages.push(msg);
-    }
+    // Note: This must run in the thread associated with m_ioContext to preserve
+    //       the order of writeHeader -> writeBody calls. Otherwise, it's
+    //       possible for two writeHeader calls to occur back-to-back,
+    //       which can:
+    //         - Corrupt a message (the second call overwrites m_currentMsgOut, so
+    //           the buffer in the first call may point to freed or stale memory)
+    //         - Break the protocol (the receiver expects a certain number of body
+    //           bytes but might instead read part of the next header and stall)
+    //      Interestingly, this also solves the issue where messages were being
+    //      received out of order.
+    asio::post(
+        m_ioContext,
+        [this, msg]()
+        {
+            if (m_outMessages.empty())
+            {
+                m_outMessages.push(msg);
+                writeHeader();
+            }
+            else
+            {
+                m_outMessages.push(msg);
+            }
+        }
+    );
 }
 
 
 bool NetConnection::recv(NetMessage &msg)
 {
-    bool ok = true;
+    bool ok = false;
 
-    msg = NetMessage();
-
-    // printf("[NET_CONNECTION: %d] Waiting for next seq: %d\n", m_id, m_nextInSeq);
-
-    NetMessage tempMsg;
-
-    if (m_inMessages.top(tempMsg) && tempMsg.header.seq == m_nextInSeq)
+    if (!m_inMessages.empty())
     {
         msg = m_inMessages.pop();
-        m_nextInSeq++;
         ok = true;
     }
-
     return ok;
 }
 
 
 bool NetConnection::blockingRecv(NetMessage &msg)
 {
+    // TODO: Add timeout? (In that case, if timeout expires ok = false)
     bool ok = true;
 
-    msg = NetMessage();
-
-    // printf("[NET_CONNECTION: %d] Waiting for next seq: %d\n", m_id, m_nextInSeq);
-
-    ok = m_inMessages.pop_matching(
-        msg, [this](const NetMessage &m){ return m.header.seq == m_nextInSeq; }
-    );
-
-    if (ok)
-    {
-        m_nextInSeq++;
-    }
+    msg = m_inMessages.pop();
 
     return ok;
 }

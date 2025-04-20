@@ -77,9 +77,11 @@ void NetServer::start()
         {
             try
             {
+                printf("[SERVER] ASIO context starting\n");
                 m_ioContext.run();
+                printf("[SERVER] ASIO context stopped\n");
             }
-            catch(const std::system_error& e)
+            catch (const std::system_error& e)
             {
                 // Socket already closed
             }

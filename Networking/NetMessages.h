@@ -18,7 +18,6 @@ struct NetMessageHeader
 {
     NetMessageType type;
     u_int32_t size;      // Number of bytes in the message body
-    u_int16_t seq;
 };
 
 struct ConnectOkBody
@@ -31,12 +30,13 @@ struct NetMessage
     public:
         NetMessage() : header{} {}
 
-        NetMessage(NetMessageType messageType, u_int16_t seq = 0) : header{messageType, 0, seq} {}
+        NetMessage(NetMessageType messageType) : header{messageType, 0} {}
 
         template <typename T>
-        NetMessage(NetMessageType messageType, const T &data, u_int16_t seq = 0)
-            : header{messageType, 0, seq}
+        NetMessage(NetMessageType messageType, const T &data)
         {
+            header.type = messageType;
+
             static_assert(std::is_trivially_copyable<T>::value,
                 "Message body must be trivially copyable");
 

@@ -8,7 +8,7 @@
 #include <asio.hpp>
 
 #include "NetMessages.h"
-#include "../Utils/TSPriorityQueue.h"
+#include "../Utils/TSQueue.h"
 
 
 class NetConnection : public std::enable_shared_from_this<NetConnection>
@@ -27,9 +27,8 @@ class NetConnection : public std::enable_shared_from_this<NetConnection>
 
     private:
         NetConnection(asio::io_context &io_context)
-        : m_socket(io_context)
-        , m_inMessages([](const NetMessage &a, const NetMessage &b) { return a.header.seq > b.header.seq; })
-        , m_outMessages([](const NetMessage &a, const NetMessage &b) { return a.header.seq > b.header.seq; })
+        : m_ioContext(io_context)
+        , m_socket(io_context)
         {}
 
         void readHeader();
@@ -37,14 +36,13 @@ class NetConnection : public std::enable_shared_from_this<NetConnection>
         void writeHeader();
         void writeBody();
 
-        u_int16_t m_outSeq = 1;
-        u_int16_t m_nextInSeq = 1;
-
         NetMessage m_currentMsgIn;
         NetMessage m_currentMsgOut;
 
-        TSPriorityQueue<NetMessage> m_inMessages;
-        TSPriorityQueue<NetMessage> m_outMessages;
+        TSQueue<NetMessage> m_inMessages;
+        TSQueue<NetMessage> m_outMessages;
+
+        asio::io_context &m_ioContext;
 };
 
 #endif
