@@ -7,8 +7,9 @@
 
 #include <asio.hpp>
 
-#include "NetMessages.h"
+#include "../Logging.h"
 #include "../Utils/TSQueue.h"
+#include "NetMessages.h"
 
 
 class NetConnection : public std::enable_shared_from_this<NetConnection>

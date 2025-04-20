@@ -26,7 +26,7 @@ bool Game::initWindow()
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        printf("SDL failed to initialize! error=[%s]", SDL_GetError());
+        LOG_ERROR("Couldn't initialize SDL: %s", SDL_GetError());
         success = false;
     }
     else
@@ -40,7 +40,7 @@ bool Game::initWindow()
 
         if (m_window == nullptr)
         {
-            printf("Window could not be created! error=[%s]", SDL_GetError());
+            LOG_ERROR("Couldn't create window: %s", SDL_GetError());
             success = false;
         }
     }
@@ -58,7 +58,7 @@ bool Game::initRenderer()
 
     if (m_renderer == nullptr)
     {
-        printf("Renderer could not be created! error=[%s]", SDL_GetError());
+        LOG_ERROR("Couldn't create renderer: %s", SDL_GetError());
         success = false;
     }
     else
@@ -67,7 +67,7 @@ bool Game::initRenderer()
 
         if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
         {
-            printf("SDL_image failed to initialize! error=[%s]", SDL_GetError());
+            LOG_ERROR("Couldn't initialize SDL_image: %s", SDL_GetError());
             success = false;
         }
     }

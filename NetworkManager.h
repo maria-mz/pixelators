@@ -4,6 +4,7 @@
 #include <thread>
 #include <functional>
 
+#include "Logging.h"
 #include "Networking/NetClient.h"
 #include "Networking/NetServer.h"
 #include "Networking/NetMessages.h"
@@ -31,7 +32,7 @@ class NetworkManager
 
         void init();
 
-        bool connectToServer(int maxRetries = 3, int waitBetweenRetriesMs = 1000);
+        bool connectToServer(int maxAttempts = 3, int waitBetweenAttempts_ms = 1000);
         bool isConnectedToServer();
 
         void shutdown();

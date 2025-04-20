@@ -43,7 +43,7 @@ void NetConnection::readHeader()
             }
             else
             {
-                printf("[NET] Message read fail\n");
+                LOG_DEBUG("Message read failure");
                 m_socket.close();
                 m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
@@ -68,7 +68,7 @@ void NetConnection::readBody()
             }
             else
             {
-                printf("[NET] Message read fail\n");
+                LOG_DEBUG("Message read failure");
                 m_socket.close();
                 m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
@@ -107,7 +107,7 @@ void NetConnection::writeHeader()
             }
             else
             {
-                printf("[NET] Message write fail\n");
+                LOG_DEBUG("Message write failure");
                 m_socket.close();
                 m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }
@@ -134,7 +134,7 @@ void NetConnection::writeBody()
             }
             else
             {
-                printf("[NET] Message write fail\n");
+                LOG_DEBUG("Message write failure");
                 m_socket.close();
                 m_inMessages.push(NetMessage{NetMessageType::Disconnect});
             }

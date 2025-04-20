@@ -11,7 +11,7 @@ bool NetClient::connectToServer(std::string host, std::string port)
 {
     bool success = true;
 
-    printf("[CLIENT] Connecting to server at %s:%s\n", host.c_str(), port.c_str());
+    LOG_INFO("Connecting to server at %s:%s", host.c_str(), port.c_str());
 
     try
     {
@@ -25,7 +25,7 @@ bool NetClient::connectToServer(std::string host, std::string port)
     catch (std::exception &e)
     {
         success = false;
-        printf("[CLIENT] Failed to connect to server: %s\n", e.what());
+        LOG_ERROR("Couldn't to connect to server: %s", e.what());
 
         if (m_connection->m_socket.is_open())
         {
@@ -42,9 +42,9 @@ bool NetClient::connectToServer(std::string host, std::string port)
             {
                 try
                 {
-                    printf("[CLIENT] ASIO context starting\n");
+                    LOG_INFO("ASIO context starting");
                     m_ioContext.run();
-                    printf("[CLIENT] ASIO context stopped\n");
+                    LOG_INFO("ASIO context stopped");
                 }
                 catch (const std::system_error& e)
                 {
@@ -89,7 +89,7 @@ void NetClient::disconnect()
     if (m_contextThread.joinable())
     {
         // This hangs sometimes... whyy??
-        printf("[CLIENT] Joining ASIO context thread\n");
+        LOG_INFO("Joining ASIO context thread");
         m_contextThread.join();
     }
 }

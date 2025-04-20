@@ -22,7 +22,7 @@ bool TextureManager::loadTexture(const char *file, SDL_Renderer* renderer)
     if (loadedSurface == NULL)
     {
         success = false;
-        printf("Image failed to load! file=[%s] error=[%s]", file, IMG_GetError());
+        LOG_ERROR("Couldn't load image. File: %s, Error: %s", file, IMG_GetError());
     }
     else
     {
@@ -31,9 +31,9 @@ bool TextureManager::loadTexture(const char *file, SDL_Renderer* renderer)
         {
             success = false;
 
-            printf("Texture couldn't be created from image! file=[%s] error=[%s]",
-                    file,
-                    IMG_GetError());
+            LOG_ERROR(
+                "Couldn't create texture from image. File: %s, Error: %s", file, IMG_GetError()
+            );
         }
 
         SDL_FreeSurface(loadedSurface);

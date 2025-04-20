@@ -33,27 +33,10 @@ void Netcode::syncPlayerWithNetState(Player &player)
         return;
     }
 
-    printf("Correcting opponent!\n");
-    printf("======== Debug ========\n");
-
-    printf(
-        "Pos: predicted (%.6f, %.6f) | net (%.6f, %.6f)\n",
-        player.m_position->x, player.m_position->y,
-        m_netPlayerData.position.x, m_netPlayerData.position.y
-    );
-
-    printf(
-        "Vel: predicted (%.6f, %.6f) | net (%.6f, %.6f)\n",
-        player.m_velocity->x, player.m_velocity->y,
-        m_netPlayerData.velocity.x, m_netPlayerData.velocity.y
-    );
-
     float dx = player.m_position->x - m_netPlayerData.position.x;
     float dy = player.m_position->y - m_netPlayerData.position.y;
     float dvx = player.m_velocity->x - m_netPlayerData.velocity.x;
     float dvy = player.m_velocity->y - m_netPlayerData.velocity.y;
-
-    printf("ΔPos: (%.6f, %.6f) | ΔVel: (%.6f, %.6f)\n", dx, dy, dvx, dvy);
 
     player.setVelocity(m_netPlayerData.velocity.x, m_netPlayerData.velocity.y);
 
@@ -62,8 +45,20 @@ void Netcode::syncPlayerWithNetState(Player &player)
     float lerpedX = std::lerp(player.m_position->x, m_netPlayerData.position.x, lerpFactor);
     float lerpedY = std::lerp(player.m_position->y, m_netPlayerData.position.y, lerpFactor);
 
-    printf("New Pos (lerped): (%.6f, %.6f)\n", lerpedX, lerpedY);
-    printf("=======================\n\n");
+    LOG_DEBUG(
+        "Correcting opponent "
+        "Pos: predicted (%.6f, %.6f) | net (%.6f, %.6f) | "
+        "Vel: predicted (%.6f, %.6f) | net (%.6f, %.6f) | "
+        "ΔPos: (%.6f, %.6f) | ΔVel: (%.6f, %.6f) | "
+        "New Pos (lerped): (%.6f, %.6f)",
+        player.m_position->x, player.m_position->y,
+        m_netPlayerData.position.x, m_netPlayerData.position.y,
+        player.m_velocity->x, player.m_velocity->y,
+        m_netPlayerData.velocity.x, m_netPlayerData.velocity.y,
+        dx, dy, dvx, dvy,
+        lerpedX,
+        lerpedY
+    );
 
     player.m_position->x = lerpedX;
     player.m_position->y = lerpedY;

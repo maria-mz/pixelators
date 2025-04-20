@@ -20,7 +20,7 @@ void NetServer::accept()
                 ClientID clientID = getNewClientID();
                 newClient->m_id = clientID;
 
-                printf("[SERVER] Accepting new client with ID %d\n", clientID);
+                LOG_INFO("Accepting new client with ID %d", clientID);
                 m_clients[clientID] = newClient;
 
                 newClient->startReadLoop();
@@ -77,9 +77,9 @@ void NetServer::start()
         {
             try
             {
-                printf("[SERVER] ASIO context starting\n");
+                LOG_INFO("ASIO context starting");
                 m_ioContext.run();
-                printf("[SERVER] ASIO context stopped\n");
+                LOG_INFO("ASIO context stopped");
             }
             catch (const std::system_error& e)
             {
@@ -109,7 +109,7 @@ void NetServer::shutdown()
 
     if (m_contextThread.joinable())
     {
-        printf("[SERVER] Joining ASIO context thread\n");
+        LOG_INFO("Joining ASIO context thread");
         m_contextThread.join();
     }
 }

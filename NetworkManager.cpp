@@ -13,7 +13,7 @@ void NetworkManager::init()
     }
 }
 
-bool NetworkManager::connectToServer(int maxRetries, int waitBetweenRetriesMs)
+bool NetworkManager::connectToServer(int maxAttempts, int waitBetweenAttempts_ms)
 {
     if (m_isHost)
     {
@@ -21,14 +21,14 @@ bool NetworkManager::connectToServer(int maxRetries, int waitBetweenRetriesMs)
     }
     else
     {
-        int retries = 0;
-        while (retries < maxRetries && !isConnectedToServer())
+        int attempts = 0;
+        while (attempts < maxAttempts && !isConnectedToServer())
         {
-            printf("Trying to connect to server...\n");
+            LOG_INFO("Trying to connect to server... (Attempt %d)", attempts + 1);
             m_client->connectToServer(SERVER_HOST, std::to_string(SERVER_PORT));
-            retries++;
+            attempts++;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(waitBetweenRetriesMs));
+            std::this_thread::sleep_for(std::chrono::milliseconds(waitBetweenAttempts_ms));
         }
 
         return isConnectedToServer();
@@ -50,8 +50,6 @@ bool NetworkManager::isConnectedToServer()
 void NetworkManager::sendPlayerMsg(GameMessage &msg)
 {
     NetMessage netMsg{NetMessageType::Data, msg};
-
-    // printf("Sending PLAYER State. msg.posX=%f, msg.posY=%f, msg.state=%d\n", msg.posX, msg.posY, msg.state);
 
     if (m_isHost)
     {
@@ -80,13 +78,12 @@ bool NetworkManager::receiveOpponentMsg(GameMessage &msg)
 
     if (netMsg.header.type == NetMessageType::Disconnect)
     {
-        printf("Disconnected!\n");
+        LOG_INFO("Opponent disconnected");
     }
 
     if (netMsg.header.type == NetMessageType::Data)
     {
         msg = netMsg.body<GameMessage>();
-        // printf("Received OPPONENT State. msg.posX=%f, msg.posY=%f, msg.state=%d\n", msg.posX, msg.posY, msg.state);
         ok = true;
     }
 
