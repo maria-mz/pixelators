@@ -21,16 +21,10 @@ SpriteClipper makeSpriteClipper(int originalWidth, int originalHeight, int scale
 
 Animation::Animation(int fps)
 {
-    m_texture = nullptr;
     m_timePerFrame = SECONDS_IN_MS / fps;
     m_frameIndex = 0;
     m_accumulatedTime = 0;
     m_flip = SDL_FLIP_NONE;
-}
-
-void Animation::setTexture(SDL_Texture *texture)
-{
-    m_texture = texture;
 }
 
 void Animation::setFrames(std::vector<SDL_Rect> &frames)
@@ -41,11 +35,6 @@ void Animation::setFrames(std::vector<SDL_Rect> &frames)
 void Animation::setFlip(SDL_RendererFlip flip)
 {
     m_flip = flip;
-}
-
-SDL_Texture *Animation::getTexture()
-{
-    return m_texture;
 }
 
 SDL_Rect Animation::getCurrentFrame()

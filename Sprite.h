@@ -20,11 +20,9 @@ class Animation
     public:
         Animation(int fps);
 
-        void setTexture(SDL_Texture* texture);
         void setFrames(std::vector<SDL_Rect> &frames);
         void setFlip(SDL_RendererFlip flip);
 
-        SDL_Texture* getTexture();
         SDL_Rect getCurrentFrame();
         SDL_RendererFlip getFlip();
 
@@ -32,7 +30,6 @@ class Animation
         void reset();
 
     private:
-        SDL_Texture* m_texture;
         std::vector<SDL_Rect> m_frames;
         int m_timePerFrame;
         int m_accumulatedTime;

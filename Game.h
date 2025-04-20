@@ -9,11 +9,10 @@
 #include "SDL2/SDL_image.h"
 
 #include "Player.h"
-#include "TextureManager.h"
+#include "Resources.h"
 #include "NetworkManager.h"
 #include "Netcode.h"
 #include "FrameTimer.h"
-#include "Utils/Time.h"
 
 constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per frame (~60 updates per second)
 
@@ -46,8 +45,6 @@ class Game
 
         SDL_Window *m_window;
         SDL_Renderer *m_renderer;
-        SDL_Texture *m_idle;
-        SDL_Texture *m_running;
 
         std::unique_ptr<Player> m_player;
         std::unique_ptr<Player> m_opponent;

@@ -6,6 +6,7 @@
 #include "SDL2/SDL.h"
 
 #include "Constants.h"
+#include "Resources.h"
 #include "Input.h"
 #include "Sprite.h"
 #include "Transform.h"
@@ -49,6 +50,7 @@ class PlayerState
         virtual void exit(Player &player) {}
 
         virtual PlayerStateName name() { return PlayerStateName::None; }
+        virtual SDL_Texture *texture() { return nullptr; };
 };
 
 class IdleState : public PlayerState {
@@ -58,7 +60,15 @@ class IdleState : public PlayerState {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override { return PlayerStateName::Idle; }
+        PlayerStateName name() override
+        {
+            return PlayerStateName::Idle;
+        }
+
+        SDL_Texture *texture() override
+        {
+            return Resources::textures.getTexture("assets/player-idle-spritesheet.png");
+        };
 };
 
 class RunningState : public PlayerState {
@@ -68,7 +78,15 @@ class RunningState : public PlayerState {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override { return PlayerStateName::Running; }
+        PlayerStateName name() override
+        {
+            return PlayerStateName::Running;
+        }
+
+        SDL_Texture *texture() override
+        {
+            return Resources::textures.getTexture("assets/player-running-spritesheet.png");
+        };
 };
 
 class Player
@@ -78,8 +96,6 @@ class Player
 
         Player();
         ~Player();
-
-        void setAnimationTexture(int animationTag, SDL_Texture *texture);
 
         void setPosition(float x, float y);
         void setVelocity(float x, float y);

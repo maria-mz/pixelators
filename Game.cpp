@@ -4,8 +4,6 @@ Game::Game()
 {
     m_window = nullptr;
     m_renderer = nullptr;
-    m_idle = nullptr;
-    m_running = nullptr;
 }
 
 Game::~Game()
@@ -15,11 +13,6 @@ Game::~Game()
     SDL_DestroyWindow(m_window);
     m_renderer = nullptr;
     m_window = nullptr;
-
-    SDL_DestroyTexture(m_idle);
-    SDL_DestroyTexture(m_running);
-    m_idle = nullptr;
-    m_running = nullptr;
 
     // Quit SDL subsystems
     SDL_Quit();
@@ -86,10 +79,10 @@ bool Game::initTextures()
 {
     bool success = true;
 
-    m_idle = TextureManager::loadTexture("assets/player-idle-spritesheet.png", m_renderer);
-    m_running = TextureManager::loadTexture("assets/player-running-spritesheet.png", m_renderer);
-
-    if (m_idle == NULL || m_running == NULL)
+    if (
+        !Resources::textures.loadTexture("assets/player-idle-spritesheet.png", m_renderer) ||
+        !Resources::textures.loadTexture("assets/player-running-spritesheet.png", m_renderer)
+    )
     {
         success = false;
     }
@@ -118,12 +111,6 @@ bool Game::init(bool isHost)
     {
         m_player = std::unique_ptr<Player>(new Player());
         m_opponent = std::unique_ptr<Player>(new Player());
-
-        m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
-        m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_IDLE, m_idle);
-
-        m_player->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
-        m_opponent->setAnimationTexture(PLAYER_ANIMATION_TAG_RUNNING, m_running);
 
         m_network = std::shared_ptr<NetworkManager>(new NetworkManager(m_isHost));
         m_network->init();

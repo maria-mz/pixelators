@@ -179,11 +179,6 @@ void Player::setTransform(int width, int height)
     m_transform->height = height;
 }
 
-void Player::setAnimationTexture(int animationTag, SDL_Texture *texture)
-{
-    m_sprite->getAnimator()->getAnimation(animationTag)->setTexture(texture);
-}
-
 void Player::input(InputEvent inputEvent)
 {
     m_inputManager->input(inputEvent);
@@ -203,6 +198,7 @@ void Player::render(SDL_Renderer *renderer)
     SDL_Rect renderQuad;
 
     Animation *animation = m_sprite->getAnimator()->getCurrentAnimation();
+    SDL_Texture *texture = m_currentState->texture();
 
     renderQuad.x = m_position->x;
     renderQuad.y = m_position->y;
@@ -211,7 +207,7 @@ void Player::render(SDL_Renderer *renderer)
 
     clipQuad = animation->getCurrentFrame();
 
-    SDL_RenderCopyEx(renderer, animation->getTexture(), &clipQuad, &renderQuad, 0.0, NULL, animation->getFlip());
+    SDL_RenderCopyEx(renderer, texture, &clipQuad, &renderQuad, 0.0, NULL, animation->getFlip());
 }
 
 void Player::changeState(PlayerStateName state)
