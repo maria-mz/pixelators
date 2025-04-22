@@ -1,22 +1,33 @@
 #include "Sprite.h"
 
-SpriteClipper makeSpriteClipper(int originalWidth, int originalHeight, int scale)
+SDL_Rect createClipFromSpriteSheet(
+    int spriteWidth,
+    int spriteHeight,
+    int pixelsFromLeft,
+    int pixelsFromTop,
+    int entityWidth,
+    int entityHeight,
+    int row,
+    int col
+)
 {
-    return [originalWidth, originalHeight, scale](int pixelsFromLeft,
-                                                  int pixelsFromTop,
-                                                  int entityWidth,
-                                                  int entityHeight,
-                                                  int row,
-                                                  int col)
-    {
-        SDL_Rect r;
-        r.x = (pixelsFromLeft * scale) + (col * (originalWidth * scale));
-        r.y = (pixelsFromTop * scale) + (row * (originalHeight * scale));
-        r.w = entityWidth * scale;
-        r.h = entityHeight * scale;
+    SDL_Rect r;
+    r.x = pixelsFromLeft + (col * spriteWidth);
+    r.y = pixelsFromTop + (row * spriteHeight);
+    r.w = entityWidth;
+    r.h = entityHeight;
 
-        return r;
-    };
+    return r;
+}
+
+SDL_Rect scaleRect(SDL_Rect r, int scale)
+{
+    r.x *= scale;
+    r.y *= scale;
+    r.w *= scale;
+    r.h *= scale;
+
+    return r;
 }
 
 Animation::Animation(int fps)
@@ -27,7 +38,7 @@ Animation::Animation(int fps)
     m_flip = SDL_FLIP_NONE;
 }
 
-void Animation::setFrames(std::vector<SDL_Rect> &frames)
+void Animation::setFrames(std::vector<Frame> &frames)
 {
     m_frames = frames;
 }
@@ -35,9 +46,14 @@ void Animation::setFrames(std::vector<SDL_Rect> &frames)
 void Animation::setFlip(SDL_RendererFlip flip)
 {
     m_flip = flip;
+
+    for (auto &frame : m_frames)
+    {
+        frame.setFlip(flip);
+    }
 }
 
-SDL_Rect Animation::getCurrentFrame()
+Frame Animation::getCurrentFrame()
 {
     return m_frames[m_frameIndex];
 }

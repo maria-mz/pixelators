@@ -35,8 +35,8 @@ void IdleState::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
-        case InputEvent::MoveLeft_Pressed: player.m_velocity->x -= player.speed; break;
-        case InputEvent::MoveRight_Pressed:  player.m_velocity->x += player.speed; break;
+        case InputEvent::MoveLeft_Pressed: player.m_velocity.x -= player.speed; break;
+        case InputEvent::MoveRight_Pressed:  player.m_velocity.x += player.speed; break;
         default: break;
     }
 
@@ -76,10 +76,10 @@ void RunningState::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
-        case InputEvent::MoveLeft_Pressed: player.m_velocity->x -= player.speed; break;
-        case InputEvent::MoveRight_Pressed:  player.m_velocity->x += player.speed; break;
-        case InputEvent::MoveLeft_Released: player.m_velocity->x += player.speed; break;
-        case InputEvent::MoveRight_Released: player.m_velocity->x -= player.speed; break;
+        case InputEvent::MoveLeft_Pressed: player.m_velocity.x -= player.speed; break;
+        case InputEvent::MoveRight_Pressed:  player.m_velocity.x += player.speed; break;
+        case InputEvent::MoveLeft_Released: player.m_velocity.x += player.speed; break;
+        case InputEvent::MoveRight_Released: player.m_velocity.x -= player.speed; break;
         default: break;
     }
 
@@ -92,11 +92,11 @@ void RunningState::input(Player &player, InputEvent inputEvent)
 
 void RunningState::update(Player &player, int deltaTime)
 {
-    player.m_position->x += deltaTime * player.m_velocity->x;
+    player.m_position.x += deltaTime * player.m_velocity.x;
 
     Animation *animation = player.m_sprite->getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_RUNNING);
 
-    if (player.m_velocity->x > 0)
+    if (player.m_velocity.x > 0)
     {
         animation->setFlip(SDL_FLIP_NONE);
     }
@@ -119,37 +119,119 @@ PlayerStateName RunningState::name()
 SDL_Texture *RunningState::texture()
 {
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUNNING);
-};
+}
 
 Player::Player()
 {
     m_inputManager = new InputManager();
     m_currentState = new IdleState();
-    m_transform = new Transform<int>;
-    m_position = new Vector2D<float>;
-    m_velocity = new Vector2D<float>;
 
-    // Set up sprite
-    auto createClip = makeSpriteClipper(32, 32, 15);
+    m_transform.width = 9;
+    m_transform.height = 21;
+    m_transform.scale = 1;
 
-    std::vector<SDL_Rect> idleAnimationFrames = {
-        createClip(11, 7, 9, 21, 0, 0),
-        createClip(11, 7, 9, 21, 0, 1),
-        createClip(11, 7, 9, 21, 0, 2),
-        createClip(11, 7, 9, 21, 1, 0),
-        createClip(11, 7, 9, 21, 1, 1),
-        createClip(11, 7, 9, 21, 1, 2)
+    std::vector<Frame> idleAnimationFrames = {
+        {
+            9,                                                                     // entityWidth
+            21,                                                                    // entityHeight
+            {0, 0, 0, 0},                                                          // entityHitBox
+            {0, 0, 9, 21},                                                         // entityHurtBox
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 0, 0), 15)   // textureClip
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 0, 1), 15),
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 0, 2), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 1, 0), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 1, 1), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 1, 2), 15)
+        }
     };
 
-    std::vector<SDL_Rect> runningAnimationFrames = {
-        createClip(11, 7, 9, 21, 0, 0),
-        createClip(11, 7, 9, 21, 0, 1),
-        createClip(11, 7, 9, 21, 0, 2),
-        createClip(11, 7, 9, 21, 1, 0),
-        createClip(11, 7, 9, 21, 1, 1),
-        createClip(11, 7, 9, 21, 1, 2),
-        createClip(11, 7, 9, 21, 2, 0),
-        createClip(11, 7, 9, 21, 2, 1)
+    std::vector<Frame> runningAnimationFrames = {
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 0, 0), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 0, 1), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 0, 2), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 1, 0), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 1, 1), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 1, 2), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 2, 0), 15)
+        },
+        {
+            9,
+            21,
+            {0, 0, 0, 0},
+            {0, 0, 9, 21},
+            scaleRect(createClipFromSpriteSheet(32, 32, 11, 7, 9, 21, 2, 1), 15)
+        }
     };
 
     Animation *idleAnimation = new Animation(8);
@@ -174,28 +256,24 @@ Player::~Player()
 
     delete m_inputManager;
     delete m_currentState;
-    delete m_transform;
-    delete m_position;
-    delete m_velocity;
     delete m_sprite;
 }
 
 void Player::setPosition(float x, float y)
 {
-    m_position->x = x;
-    m_position->y = y;
+    m_position.x = x;
+    m_position.y = y;
 }
 
 void Player::setVelocity(float x, float y)
 {
-    m_velocity->x = x;
-    m_velocity->y = y;
+    m_velocity.x = x;
+    m_velocity.y = y;
 }
 
-void Player::setTransform(int width, int height)
+void Player::setScale(int scale)
 {
-    m_transform->width = width;
-    m_transform->height = height;
+    m_transform.scale = scale;
 }
 
 void Player::input(InputEvent inputEvent)
@@ -211,22 +289,69 @@ void Player::update(int deltaTime)
     boundPosition();
 }
 
-void Player::render(SDL_Renderer *renderer)
+void Player::render(SDL_Renderer *renderer, bool drawHitBox, bool drawHurtBox)
 {
-    SDL_Rect clipQuad;
-    SDL_Rect renderQuad;
+    SDL_Rect clipRect;
+    SDL_Rect renderRect;
 
     Animation *animation = m_sprite->getAnimator()->getCurrentAnimation();
     SDL_Texture *texture = m_currentState->texture();
 
-    renderQuad.x = m_position->x;
-    renderQuad.y = m_position->y;
-    renderQuad.w = m_transform->width;
-    renderQuad.h = m_transform->height;
+    renderRect.x = m_position.x;
+    renderRect.y = m_position.y;
+    renderRect.w = m_transform.width * m_transform.scale;
+    renderRect.h = m_transform.height * m_transform.scale;
 
-    clipQuad = animation->getCurrentFrame();
+    clipRect = animation->getCurrentFrame().textureClip;
 
-    SDL_RenderCopyEx(renderer, texture, &clipQuad, &renderQuad, 0.0, NULL, animation->getFlip());
+    SDL_RenderCopyEx(renderer, texture, &clipRect, &renderRect, 0.0, NULL, animation->getFlip());
+
+    if (drawHitBox)
+    {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // Blue
+
+        SDL_Rect renderHitBox = getRenderSpaceHitBox();
+        if (renderHitBox.w * renderHitBox.h > 0)
+        {
+            SDL_RenderDrawRect(renderer, &renderHitBox);
+        }
+    }
+    if (drawHurtBox)
+    {
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red
+
+        SDL_Rect renderHurtBox = getRenderSpaceHurtBox();
+        if (renderHurtBox.w * renderHurtBox.h > 0)
+        {
+            SDL_RenderDrawRect(renderer, &renderHurtBox);
+        }
+    }
+}
+
+SDL_Rect Player::getRenderSpaceHitBox()
+{
+    SDL_Rect entityHitBox = m_sprite->getAnimator()->getCurrentAnimation()->getCurrentFrame().entityHitBox;
+
+    SDL_Rect renderHurtBox;
+    renderHurtBox.x = m_position.x + (entityHitBox.x * m_transform.scale);
+    renderHurtBox.y = m_position.y + (entityHitBox.y * m_transform.scale);
+    renderHurtBox.w = entityHitBox.w * m_transform.scale;
+    renderHurtBox.h = entityHitBox.h * m_transform.scale;
+
+    return renderHurtBox;
+}
+
+SDL_Rect Player::getRenderSpaceHurtBox()
+{
+    SDL_Rect entityHurtBox = m_sprite->getAnimator()->getCurrentAnimation()->getCurrentFrame().entityHurtBox;
+
+    SDL_Rect renderHurtBox;
+    renderHurtBox.x = m_position.x + (entityHurtBox.x * m_transform.scale);
+    renderHurtBox.y = m_position.y + (entityHurtBox.y * m_transform.scale);
+    renderHurtBox.w = entityHurtBox.w * m_transform.scale;
+    renderHurtBox.h = entityHurtBox.h * m_transform.scale;
+
+    return renderHurtBox;
 }
 
 void Player::changeState(PlayerStateName state)
@@ -251,13 +376,13 @@ void Player::changeState(PlayerStateName state)
 
 void Player::boundPosition()
 {
-    if (m_position->x < 0)
+    if (m_position.x < 0)
     {
-        m_position->x = 0;
+        m_position.x = 0;
     }
-    else if (m_position->x > (Constants::WINDOW_WIDTH - m_transform->width))
+    else if (m_position.x > (Constants::WINDOW_WIDTH - (m_transform.width * m_transform.scale)))
     {
-        m_position->x = Constants::WINDOW_WIDTH - m_transform->width;
+        m_position.x = Constants::WINDOW_WIDTH - (m_transform.width * m_transform.scale);
     }
 }
 

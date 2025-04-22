@@ -9,8 +9,7 @@
 #include "Resources.h"
 #include "Input.h"
 #include "Sprite.h"
-#include "Transform.h"
-#include "Vector2D.h"
+#include "Utils/Vector2D.h"
 
 enum PlayerAnimationTag {
     PLAYER_ANIMATION_TAG_IDLE,
@@ -75,6 +74,13 @@ class RunningState : public PlayerState {
         SDL_Texture *texture() override;
 };
 
+struct Transform
+{
+    float width;
+    float height;
+    float scale;
+};
+
 class Player
 {
     public:
@@ -85,11 +91,11 @@ class Player
 
         void setPosition(float x, float y);
         void setVelocity(float x, float y);
-        void setTransform(int width, int height);
+        void setScale(int scale);
 
         void input(InputEvent inputEvent);
         void update(int deltaTime);
-        void render(SDL_Renderer *renderer);
+        void render(SDL_Renderer *renderer, bool drawHitBox = false, bool drawHurtBox = false);
 
         PlayerStateName getState();
 
@@ -97,9 +103,13 @@ class Player
         void changeState(PlayerStateName state);
         void boundPosition();
 
-        Vector2D<float> *m_position;
-        Vector2D<float> *m_velocity;
-        Transform<int> *m_transform;
+        SDL_Rect getRenderSpaceHitBox();
+        SDL_Rect getRenderSpaceHurtBox();
+
+        Vector2D<float> m_position;
+        Vector2D<float> m_velocity;
+        Transform m_transform;
+
         PlayerState *m_currentState;
         InputManager *m_inputManager;
         Sprite *m_sprite;

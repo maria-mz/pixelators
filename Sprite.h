@@ -10,27 +10,60 @@
 
 constexpr int SECONDS_IN_MS = 1000;
 
-// Compiler can't seem to find `makeSpriteClipper` without this alias...
-using SpriteClipper = std::function<SDL_Rect(int, int, int, int, int, int)>;
+struct Frame
+{
+    int entityWidth;
+    int entityHeight;
+    SDL_Rect entityHitBox;
+    SDL_Rect entityHurtBox;
 
-SpriteClipper makeSpriteClipper(int originalWidth, int originalHeight, int scale);
+    SDL_Rect textureClip;
+    SDL_RendererFlip flip = SDL_FLIP_NONE;
+
+    void setFlip(SDL_RendererFlip newFlip)
+    {
+        if (
+            flip == SDL_FLIP_NONE && newFlip == SDL_FLIP_HORIZONTAL ||
+            flip == SDL_FLIP_HORIZONTAL && newFlip == SDL_FLIP_NONE
+        )
+        {
+            entityHitBox.x = entityWidth - entityHitBox.x - entityHitBox.w;
+            entityHurtBox.x = entityWidth - entityHurtBox.x - entityHurtBox.w;
+        }
+
+        flip = newFlip;
+    }
+};
+
+SDL_Rect createClipFromSpriteSheet(
+    int spriteWidth,
+    int spriteHeight,
+    int pixelsFromLeft,
+    int pixelsFromTop,
+    int entityWidth,
+    int entityHeight,
+    int row,
+    int col
+);
+
+SDL_Rect scaleRect(SDL_Rect r, int scale);
 
 class Animation
 {
     public:
         Animation(int fps);
 
-        void setFrames(std::vector<SDL_Rect> &frames);
+        void setFrames(std::vector<Frame> &frames);
         void setFlip(SDL_RendererFlip flip);
 
-        SDL_Rect getCurrentFrame();
+        Frame getCurrentFrame();
         SDL_RendererFlip getFlip();
 
         void update(int deltaTime);
         void reset();
 
     private:
-        std::vector<SDL_Rect> m_frames;
+        std::vector<Frame> m_frames;
         int m_timePerFrame;
         int m_accumulatedTime;
         int m_frameIndex;

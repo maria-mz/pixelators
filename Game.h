@@ -15,6 +15,9 @@
 #include "Netcode.h"
 #include "FrameTimer.h"
 
+// Uncomment to see hit and hurt boxes
+#define DEBUG_MODE
+
 constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per frame (~60 updates per second)
 
 const Vector2D PLAYER_1_SPAWN_POSITION(180, 200);

@@ -129,8 +129,8 @@ bool Game::init(bool isHost)
 
 void Game::spawnPlayers()
 {
-    m_player->setTransform(45, 105);
-    m_opponent->setTransform(45, 105);
+    m_player->setScale(5);
+    m_opponent->setScale(5);
 
     if (m_isHost)
     {
@@ -145,8 +145,8 @@ void Game::spawnPlayers()
 
     // Set initial net opponent data
     m_opponentNetcode.setNetPlayerData({
-        {m_opponent->m_position->x, m_opponent->m_position->y},
-        {m_opponent->m_velocity->x, m_opponent->m_velocity->y}
+        {m_opponent->m_position.x, m_opponent->m_position.y},
+        {m_opponent->m_velocity.x, m_opponent->m_velocity.y}
     });
 }
 
@@ -166,8 +166,17 @@ void Game::render()
     SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
     SDL_RenderClear(m_renderer);
 
+    #ifdef DEBUG_MODE
+    m_player->render(m_renderer, true, true);
+    #else
     m_player->render(m_renderer);
+    #endif
+
+    #ifdef DEBUG_MODE
+    m_opponent->render(m_renderer, true, true);
+    #else
     m_opponent->render(m_renderer);
+    #endif
 
     SDL_RenderPresent(m_renderer);
 }
@@ -231,10 +240,10 @@ void Game::run()
         m_player->update(frameTimer.getDeltaTime());
         updateOpponent(frameTimer.getDeltaTime());
 
-        playerUpdateMsg.posX = m_player->m_position->x;
-        playerUpdateMsg.posY = m_player->m_position->y;
-        playerUpdateMsg.velX = m_player->m_velocity->x;
-        playerUpdateMsg.velY = m_player->m_velocity->y;
+        playerUpdateMsg.posX = m_player->m_position.x;
+        playerUpdateMsg.posY = m_player->m_position.y;
+        playerUpdateMsg.velX = m_player->m_velocity.x;
+        playerUpdateMsg.velY = m_player->m_velocity.y;
         playerUpdateMsg.inputEvent = playerInputEvent;
 
         m_network->sendPlayerMsg(playerUpdateMsg);

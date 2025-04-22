@@ -18,8 +18,8 @@ void Netcode::setNetPlayerData(NetPlayerData data)
 
 bool Netcode::isPlayerDesynced(Player &player)
 {
-    float dx = player.m_position->x - m_netPlayerData.position.x;
-    float dy = player.m_position->y - m_netPlayerData.position.y;
+    float dx = player.m_position.x - m_netPlayerData.position.x;
+    float dy = player.m_position.y - m_netPlayerData.position.y;
 
     const int maxPositionDelta = 2;
 
@@ -33,17 +33,17 @@ void Netcode::syncPlayerWithNetState(Player &player)
         return;
     }
 
-    float dx = player.m_position->x - m_netPlayerData.position.x;
-    float dy = player.m_position->y - m_netPlayerData.position.y;
-    float dvx = player.m_velocity->x - m_netPlayerData.velocity.x;
-    float dvy = player.m_velocity->y - m_netPlayerData.velocity.y;
+    float dx = player.m_position.x - m_netPlayerData.position.x;
+    float dy = player.m_position.y - m_netPlayerData.position.y;
+    float dvx = player.m_velocity.x - m_netPlayerData.velocity.x;
+    float dvy = player.m_velocity.y - m_netPlayerData.velocity.y;
 
     player.setVelocity(m_netPlayerData.velocity.x, m_netPlayerData.velocity.y);
 
     const float lerpFactor = 0.3f;
 
-    float lerpedX = std::lerp(player.m_position->x, m_netPlayerData.position.x, lerpFactor);
-    float lerpedY = std::lerp(player.m_position->y, m_netPlayerData.position.y, lerpFactor);
+    float lerpedX = std::lerp(player.m_position.x, m_netPlayerData.position.x, lerpFactor);
+    float lerpedY = std::lerp(player.m_position.y, m_netPlayerData.position.y, lerpFactor);
 
     LOG_DEBUG(
         "Correcting opponent "
@@ -51,15 +51,15 @@ void Netcode::syncPlayerWithNetState(Player &player)
         "Vel: predicted (%.6f, %.6f) | net (%.6f, %.6f) | "
         "ΔPos: (%.6f, %.6f) | ΔVel: (%.6f, %.6f) | "
         "New Pos (lerped): (%.6f, %.6f)",
-        player.m_position->x, player.m_position->y,
+        player.m_position.x, player.m_position.y,
         m_netPlayerData.position.x, m_netPlayerData.position.y,
-        player.m_velocity->x, player.m_velocity->y,
+        player.m_velocity.x, player.m_velocity.y,
         m_netPlayerData.velocity.x, m_netPlayerData.velocity.y,
         dx, dy, dvx, dvy,
         lerpedX,
         lerpedY
     );
 
-    player.m_position->x = lerpedX;
-    player.m_position->y = lerpedY;
+    player.m_position.x = lerpedX;
+    player.m_position.y = lerpedY;
 }
