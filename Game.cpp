@@ -81,7 +81,8 @@ bool Game::initTextures()
 
     if (
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer)
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK, m_renderer)
     )
     {
         success = false;
@@ -163,19 +164,19 @@ void Game::handleOpponentNetMsgs()
 
 void Game::render()
 {
-    SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(m_renderer, 67, 67, 67, 255);
     SDL_RenderClear(m_renderer);
 
     #ifdef DEBUG_MODE
-    m_player->render(m_renderer, true, true);
+    m_opponent->render(m_renderer, true, true, true);
     #else
-    m_player->render(m_renderer);
+    m_opponent->render(m_renderer);
     #endif
 
     #ifdef DEBUG_MODE
-    m_opponent->render(m_renderer, true, true);
+    m_player->render(m_renderer, true, true, true);
     #else
-    m_opponent->render(m_renderer);
+    m_player->render(m_renderer);
     #endif
 
     SDL_RenderPresent(m_renderer);

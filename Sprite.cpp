@@ -30,8 +30,9 @@ SDL_Rect scaleRect(SDL_Rect r, int scale)
     return r;
 }
 
-Animation::Animation(int fps)
+Animation::Animation(int fps, bool repeats)
 {
+    m_repeats = repeats;
     m_timePerFrame = SECONDS_IN_MS / fps;
     m_frameIndex = 0;
     m_accumulatedTime = 0;
@@ -63,8 +64,18 @@ SDL_RendererFlip Animation::getFlip()
     return m_flip;
 }
 
+bool Animation::isDone()
+{
+    return m_isDone;
+}
+
 void Animation::update(int deltaTime)
 {
+    if (m_isDone)
+    {
+        return;
+    }
+
     m_accumulatedTime += deltaTime;
 
     while (m_accumulatedTime >= m_timePerFrame)
@@ -72,7 +83,15 @@ void Animation::update(int deltaTime)
         m_frameIndex++;
         if (m_frameIndex >= m_frames.size())
         {
-            m_frameIndex = 0;
+            if (!m_repeats)
+            {
+                m_isDone = true;
+                m_frameIndex--; // Stop at last frame
+            }
+            else
+            {
+                m_frameIndex = 0;
+            }
         }
         m_accumulatedTime -= m_timePerFrame;
     }
@@ -81,6 +100,7 @@ void Animation::update(int deltaTime)
 void Animation::reset()
 {
     m_frameIndex = 0;
+    m_isDone = false;
 }
 
 

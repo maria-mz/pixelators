@@ -10,29 +10,32 @@
 
 constexpr int SECONDS_IN_MS = 1000;
 
-struct Frame
+class Frame
 {
-    int entityWidth;
-    int entityHeight;
-    SDL_Rect entityHitBox;
-    SDL_Rect entityHurtBox;
+    public:
+        int entityWidth;
+        int entityHeight;
+        SDL_Rect entityBoundingBox;
+        SDL_Rect entityHitBox;
+        SDL_Rect entityHurtBox;
 
-    SDL_Rect textureClip;
-    SDL_RendererFlip flip = SDL_FLIP_NONE;
+        SDL_Rect textureClip;
+        SDL_RendererFlip flip = SDL_FLIP_NONE;
 
-    void setFlip(SDL_RendererFlip newFlip)
-    {
-        if (
-            flip == SDL_FLIP_NONE && newFlip == SDL_FLIP_HORIZONTAL ||
-            flip == SDL_FLIP_HORIZONTAL && newFlip == SDL_FLIP_NONE
-        )
+        void setFlip(SDL_RendererFlip newFlip)
         {
-            entityHitBox.x = entityWidth - entityHitBox.x - entityHitBox.w;
-            entityHurtBox.x = entityWidth - entityHurtBox.x - entityHurtBox.w;
-        }
+            if (
+                flip == SDL_FLIP_NONE && newFlip == SDL_FLIP_HORIZONTAL ||
+                flip == SDL_FLIP_HORIZONTAL && newFlip == SDL_FLIP_NONE
+            )
+            {
+                entityBoundingBox.x = entityWidth - entityBoundingBox.x - entityBoundingBox.w;
+                entityHitBox.x = entityWidth - entityHitBox.x - entityHitBox.w;
+                entityHurtBox.x = entityWidth - entityHurtBox.x - entityHurtBox.w;
+            }
 
-        flip = newFlip;
-    }
+            flip = newFlip;
+        }
 };
 
 SDL_Rect createClipFromSpriteSheet(
@@ -51,13 +54,14 @@ SDL_Rect scaleRect(SDL_Rect r, int scale);
 class Animation
 {
     public:
-        Animation(int fps);
+        Animation(int fps, bool repeats = true);
 
         void setFrames(std::vector<Frame> &frames);
         void setFlip(SDL_RendererFlip flip);
 
         Frame getCurrentFrame();
         SDL_RendererFlip getFlip();
+        bool isDone();
 
         void update(int deltaTime);
         void reset();
@@ -68,6 +72,9 @@ class Animation
         int m_accumulatedTime;
         int m_frameIndex;
         SDL_RendererFlip m_flip;
+
+        bool m_isDone = false;
+        bool m_repeats;
 };
 
 class Animator
