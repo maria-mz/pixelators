@@ -252,6 +252,11 @@ void Game::run()
         m_player->update(frameTimer.getDeltaTime());
         updateOpponent(frameTimer.getDeltaTime());
 
+        if (m_player->isHitBy(*m_opponent))
+        {
+            printf("Opponent hit player!!\n");
+        }
+
         playerUpdateMsg.posX = m_player->m_position.x;
         playerUpdateMsg.posY = m_player->m_position.y;
         playerUpdateMsg.velX = m_player->m_velocity.x;

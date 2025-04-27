@@ -44,7 +44,7 @@ class PlayerStateInterface
         virtual void exit(Player &player) = 0;
 
         virtual SDL_Texture *getTexture() = 0;
-        virtual std::shared_ptr<Animation> getAnimation(Player &player) = 0;
+        virtual std::shared_ptr<Animation> getAnimation(const Player &player) = 0;
 };
 
 class PlayerStateIdle : public PlayerStateInterface {
@@ -55,7 +55,7 @@ class PlayerStateIdle : public PlayerStateInterface {
         void exit(Player &player) override;
 
         SDL_Texture *getTexture() override;
-        std::shared_ptr<Animation> getAnimation(Player &player) override;
+        std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
 class PlayerStateRun : public PlayerStateInterface {
@@ -66,7 +66,7 @@ class PlayerStateRun : public PlayerStateInterface {
         void exit(Player &player) override;
 
         SDL_Texture *getTexture() override;
-        std::shared_ptr<Animation> getAnimation(Player &player) override;
+        std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
 class PlayerStateAttack : public PlayerStateInterface {
@@ -77,7 +77,7 @@ class PlayerStateAttack : public PlayerStateInterface {
         void exit(Player &player) override;
 
         SDL_Texture *getTexture() override;
-        std::shared_ptr<Animation> getAnimation(Player &player) override;
+        std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
 struct Transform
@@ -112,27 +112,29 @@ class Player
             bool drawBoundingBox = false,
             bool drawHitBox = false,
             bool drawHurtBox = false
-        );
+        ) const;
 
-        PlayerState getState();
+        PlayerState getState() const;
 
         void updateDirection(Direction direction);
 
+        bool isHitBy(const Player &opponent) const;
+
     // private:
-        AnimationManager<PlayerState> makeAnimationManager();
+        AnimationManager<PlayerState> makeAnimationManager() const;
 
         void changeState(PlayerState state);
         void boundPosition();
 
-        SDL_Rect getBoundingBox();
-        SDL_Rect getHitBox();
-        SDL_Rect getHurtBox();
+        SDL_Rect getBoundingBox() const;
+        SDL_Rect getHitBox() const;
+        SDL_Rect getHurtBox() const;
 
-        SDL_Rect transformBoxToRenderSpace(SDL_Rect box);
-        SDL_Rect transformPlayerToRenderSpace();
+        SDL_Rect transformBoxToRenderSpace(SDL_Rect box) const;
+        SDL_Rect transformPlayerToRenderSpace() const;
 
-        void renderBox(SDL_Renderer *renderer, SDL_Rect box);
-        void renderPlayer(SDL_Renderer *renderer);
+        void renderBox(SDL_Renderer *renderer, SDL_Rect box) const;
+        void renderPlayer(SDL_Renderer *renderer) const;
 
         Vector2D<float> m_position;
         Vector2D<float> m_velocity;

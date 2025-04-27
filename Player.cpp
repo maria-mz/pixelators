@@ -88,7 +88,7 @@ SDL_Texture *PlayerStateIdle::getTexture()
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_IDLE);
 }
 
-std::shared_ptr<Animation> PlayerStateIdle::getAnimation(Player &player)
+std::shared_ptr<Animation> PlayerStateIdle::getAnimation(const Player &player)
 {
     return player.m_animationManager.getAnimation(PlayerState::Idle);
 }
@@ -195,7 +195,7 @@ SDL_Texture *PlayerStateRun::getTexture()
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUNNING);
 }
 
-std::shared_ptr<Animation> PlayerStateRun::getAnimation(Player &player)
+std::shared_ptr<Animation> PlayerStateRun::getAnimation(const Player &player)
 {
     return player.m_animationManager.getAnimation(PlayerState::Run);
 }
@@ -265,12 +265,12 @@ SDL_Texture *PlayerStateAttack::getTexture()
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_ATTACK);
 }
 
-std::shared_ptr<Animation> PlayerStateAttack::getAnimation(Player &player)
+std::shared_ptr<Animation> PlayerStateAttack::getAnimation(const Player &player)
 {
     return player.m_animationManager.getAnimation(PlayerState::Attack);
 }
 
-AnimationManager<PlayerState> Player::makeAnimationManager()
+AnimationManager<PlayerState> Player::makeAnimationManager() const
 {
     std::vector<Frame> idleAnimationFrames = {
         {
@@ -375,11 +375,12 @@ AnimationManager<PlayerState> Player::makeAnimationManager()
             {8, 5, 17, 20},
             scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 1), 15)
         },
+        // Frame 03 : When you can deal damage!
         {
             32,
             32,
             {10, 7, 13, 16},
-            {0, 0, 0, 0},
+            {22, 9, 8, 9}, // The sword
             {8, 5, 17, 20},
             scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 1, 0), 15)
         },
@@ -394,15 +395,15 @@ AnimationManager<PlayerState> Player::makeAnimationManager()
     };
 
     Animation idleAnimation = Animation(4, idleAnimationFrames);
-    Animation runningAnimation = Animation(8, runningAnimationFrames);
+    Animation runningAnimation = Animation(9, runningAnimationFrames);
     Animation attackAnimation = Animation(7, attackAnimationFrames, false);
 
-    AnimationManager<PlayerState> animator;
-    animator.addAnimation(PlayerState::Idle, idleAnimation);
-    animator.addAnimation(PlayerState::Run, runningAnimation);
-    animator.addAnimation(PlayerState::Attack, attackAnimation);
+    AnimationManager<PlayerState> animationManager;
+    animationManager.addAnimation(PlayerState::Idle, idleAnimation);
+    animationManager.addAnimation(PlayerState::Run, runningAnimation);
+    animationManager.addAnimation(PlayerState::Attack, attackAnimation);
 
-    return animator;
+    return animationManager;
 }
 
 Player::Player()
@@ -454,7 +455,7 @@ void Player::update(int deltaTime)
     boundPosition();
 }
 
-void Player::render(SDL_Renderer *renderer, bool drawBoundingBox, bool drawHitBox, bool drawHurtBox)
+void Player::render(SDL_Renderer *renderer, bool drawBoundingBox, bool drawHitBox, bool drawHurtBox) const
 {
     renderPlayer(renderer);
 
@@ -475,7 +476,7 @@ void Player::render(SDL_Renderer *renderer, bool drawBoundingBox, bool drawHitBo
     }
 }
 
-void Player::renderBox(SDL_Renderer *renderer, SDL_Rect box)
+void Player::renderBox(SDL_Renderer *renderer, SDL_Rect box) const
 {
     // SDL Seems to draw a single pixel when the area is 0, but ideally
     // if area is 0 don't draw anything
@@ -485,7 +486,7 @@ void Player::renderBox(SDL_Renderer *renderer, SDL_Rect box)
     }
 }
 
-void Player::renderPlayer(SDL_Renderer *renderer)
+void Player::renderPlayer(SDL_Renderer *renderer) const
 {
     std::shared_ptr<Animation> animation = m_stateObject->getAnimation(*this);
 
@@ -503,22 +504,22 @@ void Player::renderPlayer(SDL_Renderer *renderer)
     );
 }
 
-SDL_Rect Player::getBoundingBox()
+SDL_Rect Player::getBoundingBox() const
 {
     return m_stateObject->getAnimation(*this)->getCurrentFrame().entityBoundingBox;
 }
 
-SDL_Rect Player::getHitBox()
+SDL_Rect Player::getHitBox() const
 {
     return m_stateObject->getAnimation(*this)->getCurrentFrame().entityHitBox;
 }
 
-SDL_Rect Player::getHurtBox()
+SDL_Rect Player::getHurtBox() const
 {
     return m_stateObject->getAnimation(*this)->getCurrentFrame().entityHurtBox;
 }
 
-SDL_Rect Player::transformBoxToRenderSpace(SDL_Rect box)
+SDL_Rect Player::transformBoxToRenderSpace(SDL_Rect box) const
 {
     SDL_Rect renderRect;
     renderRect.x = m_position.x + (box.x * m_transform.scale);
@@ -529,7 +530,7 @@ SDL_Rect Player::transformBoxToRenderSpace(SDL_Rect box)
     return renderRect;
 }
 
-SDL_Rect Player::transformPlayerToRenderSpace()
+SDL_Rect Player::transformPlayerToRenderSpace() const
 {
     SDL_Rect renderRect;
     renderRect.x = m_position.x;
@@ -593,7 +594,15 @@ void Player::boundPosition()
     }
 }
 
-PlayerState Player::getState()
+PlayerState Player::getState() const
 {
     return m_currentState;
+}
+
+bool Player::isHitBy(const Player &opponent) const
+{
+    SDL_Rect playerHurtBox = transformBoxToRenderSpace(getHurtBox());
+    SDL_Rect opponentHitBox = opponent.transformBoxToRenderSpace(opponent.getHitBox());
+
+    return SDL_HasIntersection(&playerHurtBox, &opponentHitBox);
 }

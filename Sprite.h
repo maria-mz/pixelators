@@ -163,7 +163,7 @@ class AnimationManager
             m_animations[key] = std::make_shared<Animation>(animation);
         }
 
-        std::shared_ptr<Animation> getAnimation(AnimationKeyType key)
+        std::shared_ptr<Animation> getAnimation(AnimationKeyType key) const
         {
             return m_animations.at(key);
         }
