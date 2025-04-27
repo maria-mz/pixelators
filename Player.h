@@ -11,12 +11,6 @@
 #include "Sprite.h"
 #include "Utils/Vector2D.h"
 
-enum PlayerAnimationTag {
-    PLAYER_ANIMATION_TAG_IDLE,
-    PLAYER_ANIMATION_TAG_RUNNING,
-    PLAYER_ANIMATION_TAG_ATTACK
-};
-
 class InputManager
 {
     public:
@@ -31,60 +25,59 @@ class InputManager
 
 class Player;
 
-enum class PlayerStateName
+enum class PlayerState
 {
-    None,
     Idle,
-    Running,
+    Run,
     Attack
 };
 
 // Interface for all states
-class PlayerState
+class PlayerStateInterface
 {
     public:
-        virtual ~PlayerState() = default;
+        virtual ~PlayerStateInterface() = default;
 
-        virtual void enter(Player &player) {}
-        virtual void input(Player &player, InputEvent inputEvent) {}
-        virtual void update(Player &player, int deltaTime) {}
-        virtual void exit(Player &player) {}
+        virtual void enter(Player &player) = 0;
+        virtual void input(Player &player, InputEvent inputEvent) = 0;
+        virtual void update(Player &player, int deltaTime) = 0;
+        virtual void exit(Player &player) = 0;
 
-        virtual PlayerStateName name() { return PlayerStateName::None; }
-        virtual SDL_Texture *texture() { return nullptr; };
+        virtual SDL_Texture *getTexture() = 0;
+        virtual std::shared_ptr<Animation> getAnimation(Player &player) = 0;
 };
 
-class IdleState : public PlayerState {
+class PlayerStateIdle : public PlayerStateInterface {
     public:
         void enter(Player &player) override;
         void input(Player &player, InputEvent inputEvent) override;
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override;
-        SDL_Texture *texture() override;
+        SDL_Texture *getTexture() override;
+        std::shared_ptr<Animation> getAnimation(Player &player) override;
 };
 
-class RunningState : public PlayerState {
+class PlayerStateRun : public PlayerStateInterface {
     public:
         void enter(Player &player) override;
         void input(Player &player, InputEvent inputEvent) override;
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override;
-        SDL_Texture *texture() override;
+        SDL_Texture *getTexture() override;
+        std::shared_ptr<Animation> getAnimation(Player &player) override;
 };
 
-class AttackState : public PlayerState {
+class PlayerStateAttack : public PlayerStateInterface {
     public:
         void enter(Player &player) override;
         void input(Player &player, InputEvent inputEvent) override;
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        PlayerStateName name() override;
-        SDL_Texture *texture() override;
+        SDL_Texture *getTexture() override;
+        std::shared_ptr<Animation> getAnimation(Player &player) override;
 };
 
 struct Transform
@@ -103,7 +96,7 @@ enum class Direction
 class Player
 {
     public:
-        static constexpr float speed = 0.35; // Pixels per ms
+        static constexpr float SPEED = 0.35; // Pixels per ms
 
         Player();
         ~Player();
@@ -121,14 +114,14 @@ class Player
             bool drawHurtBox = false
         );
 
-        PlayerStateName getState();
+        PlayerState getState();
 
         void updateDirection(Direction direction);
 
     // private:
-        Animator *makeAnimator();
+        AnimationManager<PlayerState> makeAnimationManager();
 
-        void changeState(PlayerStateName state);
+        void changeState(PlayerState state);
         void boundPosition();
 
         SDL_Rect getBoundingBox();
@@ -136,6 +129,7 @@ class Player
         SDL_Rect getHurtBox();
 
         SDL_Rect transformBoxToRenderSpace(SDL_Rect box);
+        SDL_Rect transformPlayerToRenderSpace();
 
         void renderBox(SDL_Renderer *renderer, SDL_Rect box);
         void renderPlayer(SDL_Renderer *renderer);
@@ -143,12 +137,13 @@ class Player
         Vector2D<float> m_position;
         Vector2D<float> m_velocity;
         Transform m_transform;
-
-        PlayerState *m_currentState;
-        InputManager m_inputManager;
-        Sprite m_sprite;
-
         Direction m_direction;
+
+        InputManager m_inputManager;
+        AnimationManager<PlayerState> m_animationManager;
+
+        PlayerState m_currentState;
+        PlayerStateInterface *m_stateObject;
 };
 
 #endif

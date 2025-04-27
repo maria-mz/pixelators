@@ -162,22 +162,33 @@ void Game::handleOpponentNetMsgs()
     }
 }
 
+void Game::renderPlayer(std::shared_ptr<Player> player)
+{
+    #ifdef DEBUG_MODE
+    player->render(m_renderer, true, true, true);
+    #else
+    player->render(m_renderer);
+    #endif
+}
+
 void Game::render()
 {
     SDL_SetRenderDrawColor(m_renderer, 67, 67, 67, 255);
     SDL_RenderClear(m_renderer);
 
-    #ifdef DEBUG_MODE
-    m_opponent->render(m_renderer, true, true, true);
-    #else
-    m_opponent->render(m_renderer);
-    #endif
-
-    #ifdef DEBUG_MODE
-    m_player->render(m_renderer, true, true, true);
-    #else
-    m_player->render(m_renderer);
-    #endif
+    if (
+        m_opponent->getState() == PlayerState::Attack &&
+        m_player->getState() != PlayerState::Attack
+    )
+    {
+        renderPlayer(m_player);
+        renderPlayer(m_opponent);
+    }
+    else
+    {
+        renderPlayer(m_opponent);
+        renderPlayer(m_player);
+    }
 
     SDL_RenderPresent(m_renderer);
 }

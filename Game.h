@@ -46,12 +46,13 @@ class Game
         void updateOpponent(int deltaTime);
 
         void render();
+        void renderPlayer(std::shared_ptr<Player> player);
 
         SDL_Window *m_window;
         SDL_Renderer *m_renderer;
 
-        std::unique_ptr<Player> m_player;
-        std::unique_ptr<Player> m_opponent;
+        std::shared_ptr<Player> m_player;
+        std::shared_ptr<Player> m_opponent;
 
         bool m_isHost;
 

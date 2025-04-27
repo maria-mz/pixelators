@@ -29,41 +29,41 @@ bool InputManager::isKeyPressed(Input action)
 }
 
 
-void IdleState::enter(Player &player)
+void PlayerStateIdle::enter(Player &player)
 {
-    player.m_sprite.getAnimator()->setCurrentAnimation(PLAYER_ANIMATION_TAG_IDLE);
+
 }
 
-void IdleState::input(Player &player, InputEvent inputEvent)
+void PlayerStateIdle::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
         case InputEvent::Attack_Pressed:
-            player.changeState(PlayerStateName::Attack);
+            player.changeState(PlayerState::Attack);
             break;
 
         case InputEvent::MoveLeft_Pressed:
-            player.m_velocity.x -= player.speed;
+            player.m_velocity.x -= player.SPEED;
 
             if (
                 player.m_inputManager.isKeyPressed(Input::MoveLeft) ||
                 player.m_inputManager.isKeyPressed(Input::MoveRight)
             )
             {
-                player.changeState(PlayerStateName::Running);
+                player.changeState(PlayerState::Run);
             }
 
             break;
 
         case InputEvent::MoveRight_Pressed:
-            player.m_velocity.x += player.speed;
+            player.m_velocity.x += player.SPEED;
 
             if (
                 player.m_inputManager.isKeyPressed(Input::MoveLeft) ||
                 player.m_inputManager.isKeyPressed(Input::MoveRight)
             )
             {
-                player.changeState(PlayerStateName::Running);
+                player.changeState(PlayerState::Run);
             }
 
             break;
@@ -73,32 +73,32 @@ void IdleState::input(Player &player, InputEvent inputEvent)
     }
 }
 
-void IdleState::update(Player &player, int deltaTime)
+void PlayerStateIdle::update(Player &player, int deltaTime)
 {
-    player.m_sprite.getAnimator()->updateCurrentAnimation(deltaTime);
+    player.m_animationManager.getAnimation(PlayerState::Idle)->update(deltaTime);
 }
 
-void IdleState::exit(Player &player)
+void PlayerStateIdle::exit(Player &player)
 {
-
+    player.m_animationManager.getAnimation(PlayerState::Idle)->reset();
 }
 
-PlayerStateName IdleState::name()
-{
-    return PlayerStateName::Idle;
-}
-
-SDL_Texture *IdleState::texture()
+SDL_Texture *PlayerStateIdle::getTexture()
 {
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_IDLE);
-};
-
-void RunningState::enter(Player &player)
-{
-    player.m_sprite.getAnimator()->setCurrentAnimation(PLAYER_ANIMATION_TAG_RUNNING);
 }
 
-void RunningState::input(Player &player, InputEvent inputEvent)
+std::shared_ptr<Animation> PlayerStateIdle::getAnimation(Player &player)
+{
+    return player.m_animationManager.getAnimation(PlayerState::Idle);
+}
+
+void PlayerStateRun::enter(Player &player)
+{
+
+}
+
+void PlayerStateRun::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
@@ -108,20 +108,20 @@ void RunningState::input(Player &player, InputEvent inputEvent)
                 !player.m_inputManager.isKeyPressed(Input::MoveRight)
             )
             {
-                player.changeState(PlayerStateName::Attack);
+                player.changeState(PlayerState::Attack);
             }
             break;
 
         case InputEvent::MoveLeft_Pressed:
-            player.m_velocity.x -= player.speed;
+            player.m_velocity.x -= player.SPEED;
             break;
 
         case InputEvent::MoveRight_Pressed:
-            player.m_velocity.x += player.speed;
+            player.m_velocity.x += player.SPEED;
             break;
 
         case InputEvent::MoveLeft_Released:
-            player.m_velocity.x += player.speed;
+            player.m_velocity.x += player.SPEED;
 
             if (
                 !player.m_inputManager.isKeyPressed(Input::MoveLeft) &&
@@ -130,11 +130,11 @@ void RunningState::input(Player &player, InputEvent inputEvent)
             {
                 if (player.m_inputManager.isKeyPressed(Input::Attack))
                 {
-                    player.changeState(PlayerStateName::Attack);
+                    player.changeState(PlayerState::Attack);
                 }
                 else
                 {
-                    player.changeState(PlayerStateName::Idle);
+                    player.changeState(PlayerState::Idle);
                 }
 
                 player.updateDirection(Direction::Left);
@@ -143,7 +143,7 @@ void RunningState::input(Player &player, InputEvent inputEvent)
             break;
 
         case InputEvent::MoveRight_Released:
-            player.m_velocity.x -= player.speed;
+            player.m_velocity.x -= player.SPEED;
 
             if (
                 !player.m_inputManager.isKeyPressed(Input::MoveLeft) &&
@@ -152,11 +152,11 @@ void RunningState::input(Player &player, InputEvent inputEvent)
             {
                 if (player.m_inputManager.isKeyPressed(Input::Attack))
                 {
-                    player.changeState(PlayerStateName::Attack);
+                    player.changeState(PlayerState::Attack);
                 }
                 else
                 {
-                    player.changeState(PlayerStateName::Idle);
+                    player.changeState(PlayerState::Idle);
                 }
 
                 player.updateDirection(Direction::Right);
@@ -169,11 +169,9 @@ void RunningState::input(Player &player, InputEvent inputEvent)
     }
 }
 
-void RunningState::update(Player &player, int deltaTime)
+void PlayerStateRun::update(Player &player, int deltaTime)
 {
     player.m_position.x += deltaTime * player.m_velocity.x;
-
-    Animation *animation = player.m_sprite.getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_RUNNING);
 
     if (player.m_velocity.x > 0)
     {
@@ -184,58 +182,58 @@ void RunningState::update(Player &player, int deltaTime)
         player.updateDirection(Direction::Left);
     }
 
-    player.m_sprite.getAnimator()->updateCurrentAnimation(deltaTime);
+    player.m_animationManager.getAnimation(PlayerState::Run)->update(deltaTime);
 }
 
-void RunningState::exit(Player &player)
+void PlayerStateRun::exit(Player &player)
 {
-
+    player.m_animationManager.getAnimation(PlayerState::Run)->reset();
 }
 
-PlayerStateName RunningState::name()
-{
-    return PlayerStateName::Running;
-}
-
-SDL_Texture *RunningState::texture()
+SDL_Texture *PlayerStateRun::getTexture()
 {
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUNNING);
 }
 
-void AttackState::enter(Player &player)
+std::shared_ptr<Animation> PlayerStateRun::getAnimation(Player &player)
 {
-    player.m_sprite.getAnimator()->setCurrentAnimation(PLAYER_ANIMATION_TAG_ATTACK);
+    return player.m_animationManager.getAnimation(PlayerState::Run);
 }
 
-void AttackState::input(Player &player, InputEvent inputEvent)
+void PlayerStateAttack::enter(Player &player)
+{
+
+}
+
+void PlayerStateAttack::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
         case InputEvent::Attack_Pressed:
-            player.changeState(PlayerStateName::Attack);
+            player.changeState(PlayerState::Attack);
             break;
 
         case InputEvent::MoveLeft_Pressed:
-            player.m_velocity.x -= player.speed;
+            player.m_velocity.x -= player.SPEED;
 
             if (
                 player.m_inputManager.isKeyPressed(Input::MoveLeft) ||
                 player.m_inputManager.isKeyPressed(Input::MoveRight)
             )
             {
-                player.changeState(PlayerStateName::Running);
+                player.changeState(PlayerState::Run);
             }
 
             break;
         case InputEvent::MoveRight_Pressed:
-            player.m_velocity.x += player.speed;
+            player.m_velocity.x += player.SPEED;
 
             if (
                 player.m_inputManager.isKeyPressed(Input::MoveLeft) ||
                 player.m_inputManager.isKeyPressed(Input::MoveRight)
             )
             {
-                player.changeState(PlayerStateName::Running);
+                player.changeState(PlayerState::Run);
             }
 
             break;
@@ -245,34 +243,34 @@ void AttackState::input(Player &player, InputEvent inputEvent)
     }
 }
 
-void AttackState::update(Player &player, int deltaTime)
+void PlayerStateAttack::update(Player &player, int deltaTime)
 {
-    if (player.m_sprite.getAnimator()->getCurrentAnimation()->isDone())
+    if (player.m_animationManager.getAnimation(PlayerState::Attack)->isDone())
     {
-        player.changeState(PlayerStateName::Idle);
+        player.changeState(PlayerState::Idle);
     }
     else
     {
-        player.m_sprite.getAnimator()->updateCurrentAnimation(deltaTime);
+        player.m_animationManager.getAnimation(PlayerState::Attack)->update(deltaTime);
     }
 }
 
-void AttackState::exit(Player &player)
+void PlayerStateAttack::exit(Player &player)
 {
-
+    player.m_animationManager.getAnimation(PlayerState::Attack)->reset();
 }
 
-PlayerStateName AttackState::name()
-{
-    return PlayerStateName::Attack;
-}
-
-SDL_Texture *AttackState::texture()
+SDL_Texture *PlayerStateAttack::getTexture()
 {
     return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_ATTACK);
 }
 
-Animator *Player::makeAnimator()
+std::shared_ptr<Animation> PlayerStateAttack::getAnimation(Player &player)
+{
+    return player.m_animationManager.getAnimation(PlayerState::Attack);
+}
+
+AnimationManager<PlayerState> Player::makeAnimationManager()
 {
     std::vector<Frame> idleAnimationFrames = {
         {
@@ -395,42 +393,36 @@ Animator *Player::makeAnimator()
         },
     };
 
-    Animation *idleAnimation = new Animation(4);
-    Animation *runningAnimation = new Animation(8);
-    Animation *attackAnimation = new Animation(7, false);
+    Animation idleAnimation = Animation(4, idleAnimationFrames);
+    Animation runningAnimation = Animation(8, runningAnimationFrames);
+    Animation attackAnimation = Animation(7, attackAnimationFrames, false);
 
-    idleAnimation->setFrames(idleAnimationFrames);
-    runningAnimation->setFrames(runningAnimationFrames);
-    attackAnimation->setFrames(attackAnimationFrames);
-
-    Animator *animator = new Animator();
-    animator->addAnimation(PLAYER_ANIMATION_TAG_IDLE, idleAnimation);
-    animator->addAnimation(PLAYER_ANIMATION_TAG_RUNNING, runningAnimation);
-    animator->addAnimation(PLAYER_ANIMATION_TAG_ATTACK, attackAnimation);
+    AnimationManager<PlayerState> animator;
+    animator.addAnimation(PlayerState::Idle, idleAnimation);
+    animator.addAnimation(PlayerState::Run, runningAnimation);
+    animator.addAnimation(PlayerState::Attack, attackAnimation);
 
     return animator;
 }
 
 Player::Player()
 {
-    m_currentState = new IdleState();
+    m_stateObject = new PlayerStateIdle();
 
     m_transform.width = 32;
     m_transform.height = 32;
     m_transform.scale = 1;
 
-    Animator *animator = makeAnimator();
+    m_animationManager = makeAnimationManager();
 
-    m_sprite.setAnimator(animator);
-
-    m_currentState->enter(*this);
+    m_stateObject->enter(*this);
 }
 
 Player::~Player()
 {
-    m_currentState->exit(*this);
+    m_stateObject->exit(*this);
 
-    delete m_currentState;
+    delete m_stateObject;
 }
 
 void Player::setPosition(float x, float y)
@@ -453,12 +445,12 @@ void Player::setScale(int scale)
 void Player::input(InputEvent inputEvent)
 {
     m_inputManager.input(inputEvent);
-    m_currentState->input(*this, inputEvent);
+    m_stateObject->input(*this, inputEvent);
 }
 
 void Player::update(int deltaTime)
 {
-    m_currentState->update(*this, deltaTime);
+    m_stateObject->update(*this, deltaTime);
     boundPosition();
 }
 
@@ -495,69 +487,79 @@ void Player::renderBox(SDL_Renderer *renderer, SDL_Rect box)
 
 void Player::renderPlayer(SDL_Renderer *renderer)
 {
-    SDL_Rect clipRect;
+    std::shared_ptr<Animation> animation = m_stateObject->getAnimation(*this);
+
+    SDL_Rect clipRect = animation->getCurrentFrame().textureClip;
+    SDL_Rect renderRect = transformPlayerToRenderSpace();
+
+    SDL_RenderCopyEx(
+        renderer,
+        m_stateObject->getTexture(),
+        &clipRect,
+        &renderRect,
+        0.0,
+        NULL,
+        animation->getFlip()
+    );
+}
+
+SDL_Rect Player::getBoundingBox()
+{
+    return m_stateObject->getAnimation(*this)->getCurrentFrame().entityBoundingBox;
+}
+
+SDL_Rect Player::getHitBox()
+{
+    return m_stateObject->getAnimation(*this)->getCurrentFrame().entityHitBox;
+}
+
+SDL_Rect Player::getHurtBox()
+{
+    return m_stateObject->getAnimation(*this)->getCurrentFrame().entityHurtBox;
+}
+
+SDL_Rect Player::transformBoxToRenderSpace(SDL_Rect box)
+{
     SDL_Rect renderRect;
+    renderRect.x = m_position.x + (box.x * m_transform.scale);
+    renderRect.y = m_position.y + (box.y * m_transform.scale);
+    renderRect.w = box.w * m_transform.scale;
+    renderRect.h = box.h * m_transform.scale;
 
-    Animation *animation = m_sprite.getAnimator()->getCurrentAnimation();
-    SDL_Texture *texture = m_currentState->texture();
+    return renderRect;
+}
 
+SDL_Rect Player::transformPlayerToRenderSpace()
+{
+    SDL_Rect renderRect;
     renderRect.x = m_position.x;
     renderRect.y = m_position.y;
     renderRect.w = m_transform.width * m_transform.scale;
     renderRect.h = m_transform.height * m_transform.scale;
 
-    clipRect = animation->getCurrentFrame().textureClip;
-
-    SDL_RenderCopyEx(renderer, texture, &clipRect, &renderRect, 0.0, NULL, animation->getFlip());
+    return renderRect;
 }
 
-SDL_Rect Player::getBoundingBox()
+void Player::changeState(PlayerState state)
 {
-    return m_sprite.getAnimator()->getCurrentAnimation()->getCurrentFrame().entityBoundingBox;
-}
-
-SDL_Rect Player::getHitBox()
-{
-    return m_sprite.getAnimator()->getCurrentAnimation()->getCurrentFrame().entityHitBox;
-}
-
-SDL_Rect Player::getHurtBox()
-{
-    return m_sprite.getAnimator()->getCurrentAnimation()->getCurrentFrame().entityHurtBox;
-}
-
-SDL_Rect Player::transformBoxToRenderSpace(SDL_Rect box)
-{
-    SDL_Rect renderBox;
-    renderBox.x = m_position.x + (box.x * m_transform.scale);
-    renderBox.y = m_position.y + (box.y * m_transform.scale);
-    renderBox.w = box.w * m_transform.scale;
-    renderBox.h = box.h * m_transform.scale;
-
-    return renderBox;
-}
-
-void Player::changeState(PlayerStateName state)
-{
-    m_currentState->exit(*this);
-    delete m_currentState;
+    m_stateObject->exit(*this);
+    delete m_stateObject;
 
     switch (state)
     {
-        case PlayerStateName::Idle:
-            m_currentState = new IdleState();
+        case PlayerState::Idle:
+            m_stateObject = new PlayerStateIdle();
             break;
-        case PlayerStateName::Running:
-            m_currentState = new RunningState();
+        case PlayerState::Run:
+            m_stateObject = new PlayerStateRun();
             break;
-        case PlayerStateName::Attack:
-            m_currentState = new AttackState();
+        case PlayerState::Attack:
+            m_stateObject = new PlayerStateAttack();
             break;
-        case PlayerStateName::None:
-            throw std::logic_error("Can't change Player state to 'None'");
     }
 
-    m_currentState->enter(*this);
+    m_currentState = state;
+    m_stateObject->enter(*this);
 }
 
 void Player::updateDirection(Direction direction)
@@ -572,9 +574,9 @@ void Player::updateDirection(Direction direction)
         case Direction::Left: flip = SDL_FLIP_HORIZONTAL; break;
     }
 
-    m_sprite.getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_IDLE)->setFlip(flip);
-    m_sprite.getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_RUNNING)->setFlip(flip);
-    m_sprite.getAnimator()->getAnimation(PLAYER_ANIMATION_TAG_ATTACK)->setFlip(flip);
+    m_animationManager.getAnimation(PlayerState::Idle)->setFlip(flip);
+    m_animationManager.getAnimation(PlayerState::Run)->setFlip(flip);
+    m_animationManager.getAnimation(PlayerState::Attack)->setFlip(flip);
 }
 
 void Player::boundPosition()
@@ -591,7 +593,7 @@ void Player::boundPosition()
     }
 }
 
-PlayerStateName Player::getState()
+PlayerState Player::getState()
 {
-    return m_currentState->name();
+    return m_currentState;
 }
