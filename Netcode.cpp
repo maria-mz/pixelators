@@ -21,9 +21,7 @@ bool Netcode::isPlayerDesynced(Player &player)
     float dx = player.m_position.x - m_netPlayerData.position.x;
     float dy = player.m_position.y - m_netPlayerData.position.y;
 
-    const int maxPositionDelta = 2;
-
-    return (abs(dx) > maxPositionDelta || abs(dy) > maxPositionDelta);
+    return (abs(dx) >= 1 || abs(dy) >= 1);
 }
 
 void Netcode::syncPlayerWithNetState(Player &player)

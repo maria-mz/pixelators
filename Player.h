@@ -29,7 +29,8 @@ enum class PlayerState
 {
     Idle,
     Run,
-    Attack
+    Attack,
+    Knockback
 };
 
 // Interface for all states
@@ -80,6 +81,17 @@ class PlayerStateAttack : public PlayerStateInterface {
         std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
+class PlayerStateKnockback : public PlayerStateInterface {
+    public:
+        void enter(Player &player) override;
+        void input(Player &player, InputEvent inputEvent) override;
+        void update(Player &player, int deltaTime) override;
+        void exit(Player &player) override;
+
+        SDL_Texture *getTexture() override;
+        std::shared_ptr<Animation> getAnimation(const Player &player) override;
+};
+
 struct Transform
 {
     float width;
@@ -115,10 +127,12 @@ class Player
         ) const;
 
         PlayerState getState() const;
+        Direction getDirection() const;
 
         void updateDirection(Direction direction);
 
         bool isHitBy(const Player &opponent) const;
+        bool maybeRegisterHit(const Player &opponent);
 
     // private:
         AnimationManager<PlayerState> makeAnimationManager() const;
@@ -140,6 +154,8 @@ class Player
         Vector2D<float> m_velocity;
         Transform m_transform;
         Direction m_direction;
+
+        bool m_isImmune;
 
         InputManager m_inputManager;
         AnimationManager<PlayerState> m_animationManager;

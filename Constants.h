@@ -12,6 +12,7 @@ namespace Constants
     constexpr const char* FILE_SPRITE_PLAYER_IDLE = "assets/player-idle-spritesheet.png";
     constexpr const char* FILE_SPRITE_PLAYER_RUNNING = "assets/player-run-spritesheet.png";
     constexpr const char* FILE_SPRITE_PLAYER_ATTACK = "assets/player-attack-spritesheet.png";
+    constexpr const char* FILE_SPRITE_PLAYER_KNOCKBACK = "assets/player-knockback-spritesheet.png";
 }
 
 #endif

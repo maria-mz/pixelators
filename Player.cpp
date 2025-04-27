@@ -270,6 +270,44 @@ std::shared_ptr<Animation> PlayerStateAttack::getAnimation(const Player &player)
     return player.m_animationManager.getAnimation(PlayerState::Attack);
 }
 
+void PlayerStateKnockback::enter(Player &player)
+{
+    player.m_isImmune = true;
+}
+
+void PlayerStateKnockback::input(Player &player, InputEvent inputEvent)
+{
+    // Ignore inputs during knockback
+}
+
+void PlayerStateKnockback::update(Player &player, int deltaTime)
+{
+    if (player.m_animationManager.getAnimation(PlayerState::Knockback)->isDone())
+    {
+        player.changeState(PlayerState::Idle);
+    }
+    else
+    {
+        player.m_animationManager.getAnimation(PlayerState::Knockback)->update(deltaTime);
+    }
+}
+
+void PlayerStateKnockback::exit(Player &player)
+{
+    player.m_animationManager.getAnimation(PlayerState::Knockback)->reset();
+    player.m_isImmune = false;
+}
+
+SDL_Texture *PlayerStateKnockback::getTexture()
+{
+    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK);
+}
+
+std::shared_ptr<Animation> PlayerStateKnockback::getAnimation(const Player &player)
+{
+    return player.m_animationManager.getAnimation(PlayerState::Knockback);
+}
+
 AnimationManager<PlayerState> Player::makeAnimationManager() const
 {
     std::vector<Frame> idleAnimationFrames = {
@@ -394,14 +432,29 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
         },
     };
 
+    std::vector<Frame> knockbackAnimationFrames = {
+        // Only using knockback's first frame because we go back to the idle after
+        // anyway and without the second frame that transition looks smoother
+        {
+            32,
+            32,
+            {9, 7, 13, 16},
+            {0, 0, 0, 0},
+            {0, 0, 0, 0},
+            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 0), 15)
+        },
+    };
+
     Animation idleAnimation = Animation(4, idleAnimationFrames);
     Animation runningAnimation = Animation(9, runningAnimationFrames);
     Animation attackAnimation = Animation(7, attackAnimationFrames, false);
+    Animation knockbackAnimation = Animation(4, knockbackAnimationFrames, false);
 
     AnimationManager<PlayerState> animationManager;
     animationManager.addAnimation(PlayerState::Idle, idleAnimation);
     animationManager.addAnimation(PlayerState::Run, runningAnimation);
     animationManager.addAnimation(PlayerState::Attack, attackAnimation);
+    animationManager.addAnimation(PlayerState::Knockback, knockbackAnimation);
 
     return animationManager;
 }
@@ -557,6 +610,9 @@ void Player::changeState(PlayerState state)
         case PlayerState::Attack:
             m_stateObject = new PlayerStateAttack();
             break;
+        case PlayerState::Knockback:
+            m_stateObject = new PlayerStateKnockback();
+            break;
     }
 
     m_currentState = state;
@@ -578,6 +634,7 @@ void Player::updateDirection(Direction direction)
     m_animationManager.getAnimation(PlayerState::Idle)->setFlip(flip);
     m_animationManager.getAnimation(PlayerState::Run)->setFlip(flip);
     m_animationManager.getAnimation(PlayerState::Attack)->setFlip(flip);
+    m_animationManager.getAnimation(PlayerState::Knockback)->setFlip(flip);
 }
 
 void Player::boundPosition()
@@ -599,10 +656,28 @@ PlayerState Player::getState() const
     return m_currentState;
 }
 
+Direction Player::getDirection() const
+{
+    return m_direction;
+}
+
 bool Player::isHitBy(const Player &opponent) const
 {
     SDL_Rect playerHurtBox = transformBoxToRenderSpace(getHurtBox());
     SDL_Rect opponentHitBox = opponent.transformBoxToRenderSpace(opponent.getHitBox());
 
     return SDL_HasIntersection(&playerHurtBox, &opponentHitBox);
+}
+
+bool Player::maybeRegisterHit(const Player &opponent)
+{
+    if (isHitBy(opponent) && !m_isImmune)
+    {
+        updateDirection((opponent.getDirection() == Direction::Left) ? Direction::Right : Direction::Left);
+        changeState(PlayerState::Knockback);
+
+        return true;
+    }
+
+    return false;
 }

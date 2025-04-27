@@ -82,7 +82,8 @@ bool Game::initTextures()
     if (
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK, m_renderer)
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK, m_renderer)
     )
     {
         success = false;
@@ -252,10 +253,11 @@ void Game::run()
         m_player->update(frameTimer.getDeltaTime());
         updateOpponent(frameTimer.getDeltaTime());
 
-        if (m_player->isHitBy(*m_opponent))
-        {
-            printf("Opponent hit player!!\n");
-        }
+        // TODO: The server should determine if the hit is registered .. !
+        // Maybe the opponent should still be "knocked back" but once
+        // the server registers the hit, update the opponent's health?
+        m_player->maybeRegisterHit(*m_opponent);
+        m_opponent->maybeRegisterHit(*m_player);
 
         playerUpdateMsg.posX = m_player->m_position.x;
         playerUpdateMsg.posY = m_player->m_position.y;
