@@ -83,7 +83,8 @@ bool Game::initTextures()
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK, m_renderer)
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK, m_renderer)
     )
     {
         success = false;

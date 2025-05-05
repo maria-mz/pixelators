@@ -5,7 +5,8 @@ InputManager::InputManager()
     m_keyState = {
         {Input::MoveLeft, false},
         {Input::MoveRight, false},
-        {Input::Attack, false}
+        {Input::Attack, false},
+        {Input::Block, false}
     };
 }
 
@@ -16,9 +17,11 @@ void InputManager::input(InputEvent inputEvent)
         case InputEvent::MoveLeft_Pressed: m_keyState[Input::MoveLeft] = true; break;
         case InputEvent::MoveRight_Pressed: m_keyState[Input::MoveRight] = true; break;
         case InputEvent::Attack_Pressed: m_keyState[Input::Attack] = true; break;
+        case InputEvent::Block_Pressed: m_keyState[Input::Block] = true; break;
         case InputEvent::MoveLeft_Released: m_keyState[Input::MoveLeft] = false; break;
         case InputEvent::MoveRight_Released: m_keyState[Input::MoveRight] = false; break;
         case InputEvent::Attack_Released: m_keyState[Input::Attack] = false; break;
+        case InputEvent::Block_Released: m_keyState[Input::Block] = false; break;
         default: break;
     }
 }
@@ -38,6 +41,10 @@ void PlayerStateIdle::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
+        case InputEvent::Block_Pressed:
+            player.changeState(PlayerState::Block);
+            break;
+
         case InputEvent::Attack_Pressed:
             player.changeState(PlayerState::Attack);
             break;
@@ -102,6 +109,16 @@ void PlayerStateRun::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
+        case InputEvent::Block_Pressed:
+            if (
+                !player.m_inputManager.isKeyPressed(Input::MoveLeft) &&
+                !player.m_inputManager.isKeyPressed(Input::MoveRight)
+            )
+            {
+                player.changeState(PlayerState::Block);
+            }
+            break;
+
         case InputEvent::Attack_Pressed:
             if (
                 !player.m_inputManager.isKeyPressed(Input::MoveLeft) &&
@@ -132,6 +149,10 @@ void PlayerStateRun::input(Player &player, InputEvent inputEvent)
                 {
                     player.changeState(PlayerState::Attack);
                 }
+                else if (player.m_inputManager.isKeyPressed(Input::Block))
+                {
+                    player.changeState(PlayerState::Block);
+                }
                 else
                 {
                     player.changeState(PlayerState::Idle);
@@ -153,6 +174,10 @@ void PlayerStateRun::input(Player &player, InputEvent inputEvent)
                 if (player.m_inputManager.isKeyPressed(Input::Attack))
                 {
                     player.changeState(PlayerState::Attack);
+                }
+                else if (player.m_inputManager.isKeyPressed(Input::Block))
+                {
+                    player.changeState(PlayerState::Block);
                 }
                 else
                 {
@@ -209,6 +234,10 @@ void PlayerStateAttack::input(Player &player, InputEvent inputEvent)
 {
     switch (inputEvent)
     {
+        case InputEvent::Block_Pressed:
+            player.changeState(PlayerState::Block);
+            break;
+
         case InputEvent::Attack_Pressed:
             player.changeState(PlayerState::Attack);
             break;
@@ -307,6 +336,75 @@ std::shared_ptr<Animation> PlayerStateKnockback::getAnimation(const Player &play
 {
     return player.m_animationManager.getAnimation(PlayerState::Knockback);
 }
+
+void PlayerStateBlock::enter(Player &player)
+{
+
+}
+
+void PlayerStateBlock::input(Player &player, InputEvent inputEvent)
+{
+    switch (inputEvent)
+    {
+        case InputEvent::Block_Released:
+            player.changeState(PlayerState::Idle);
+            break;
+
+        case InputEvent::Attack_Pressed:
+            player.changeState(PlayerState::Attack);
+            break;
+
+        case InputEvent::MoveLeft_Pressed:
+            player.m_velocity.x -= player.SPEED;
+
+            if (
+                player.m_inputManager.isKeyPressed(Input::MoveLeft) ||
+                player.m_inputManager.isKeyPressed(Input::MoveRight)
+            )
+            {
+                player.changeState(PlayerState::Run);
+            }
+
+            break;
+
+        case InputEvent::MoveRight_Pressed:
+            player.m_velocity.x += player.SPEED;
+
+            if (
+                player.m_inputManager.isKeyPressed(Input::MoveLeft) ||
+                player.m_inputManager.isKeyPressed(Input::MoveRight)
+            )
+            {
+                player.changeState(PlayerState::Run);
+            }
+
+            break;
+
+        default:
+            break;
+    }
+}
+
+void PlayerStateBlock::update(Player &player, int deltaTime)
+{
+    player.m_animationManager.getAnimation(PlayerState::Block)->update(deltaTime);
+}
+
+void PlayerStateBlock::exit(Player &player)
+{
+    player.m_animationManager.getAnimation(PlayerState::Block)->reset();
+}
+
+SDL_Texture *PlayerStateBlock::getTexture()
+{
+    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_BLOCK);
+}
+
+std::shared_ptr<Animation> PlayerStateBlock::getAnimation(const Player &player)
+{
+    return player.m_animationManager.getAnimation(PlayerState::Block);
+}
+
 
 AnimationManager<PlayerState> Player::makeAnimationManager() const
 {
@@ -445,16 +543,37 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
         },
     };
 
+    std::vector<Frame> blockAnimationFrames = {
+        {
+            32,
+            32,
+            {10, 7, 13, 16},
+            {0, 0, 0, 0},
+            {0, 0, 0, 0},
+            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 0), 15)
+        },
+        {
+            32,
+            32,
+            {10, 7, 13, 16},
+            {0, 0, 0, 0},
+            {0, 0, 0, 0},
+            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 1), 15)
+        },
+    };
+
     Animation idleAnimation = Animation(4, idleAnimationFrames);
     Animation runningAnimation = Animation(9, runningAnimationFrames);
-    Animation attackAnimation = Animation(7, attackAnimationFrames, false);
-    Animation knockbackAnimation = Animation(4, knockbackAnimationFrames, false);
+    Animation attackAnimation = Animation(8, attackAnimationFrames, false);
+    Animation knockbackAnimation = Animation(5, knockbackAnimationFrames, false);
+    Animation blockAnimation = Animation(7, blockAnimationFrames, false);
 
     AnimationManager<PlayerState> animationManager;
     animationManager.addAnimation(PlayerState::Idle, idleAnimation);
     animationManager.addAnimation(PlayerState::Run, runningAnimation);
     animationManager.addAnimation(PlayerState::Attack, attackAnimation);
     animationManager.addAnimation(PlayerState::Knockback, knockbackAnimation);
+    animationManager.addAnimation(PlayerState::Block, blockAnimation);
 
     return animationManager;
 }
@@ -613,6 +732,9 @@ void Player::changeState(PlayerState state)
         case PlayerState::Knockback:
             m_stateObject = new PlayerStateKnockback();
             break;
+        case PlayerState::Block:
+            m_stateObject = new PlayerStateBlock();
+            break;
     }
 
     m_currentState = state;
@@ -635,6 +757,7 @@ void Player::updateDirection(Direction direction)
     m_animationManager.getAnimation(PlayerState::Run)->setFlip(flip);
     m_animationManager.getAnimation(PlayerState::Attack)->setFlip(flip);
     m_animationManager.getAnimation(PlayerState::Knockback)->setFlip(flip);
+    m_animationManager.getAnimation(PlayerState::Block)->setFlip(flip);
 }
 
 void Player::boundPosition()

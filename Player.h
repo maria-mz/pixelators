@@ -30,7 +30,8 @@ enum class PlayerState
     Idle,
     Run,
     Attack,
-    Knockback
+    Knockback,
+    Block
 };
 
 // Interface for all states
@@ -82,6 +83,17 @@ class PlayerStateAttack : public PlayerStateInterface {
 };
 
 class PlayerStateKnockback : public PlayerStateInterface {
+    public:
+        void enter(Player &player) override;
+        void input(Player &player, InputEvent inputEvent) override;
+        void update(Player &player, int deltaTime) override;
+        void exit(Player &player) override;
+
+        SDL_Texture *getTexture() override;
+        std::shared_ptr<Animation> getAnimation(const Player &player) override;
+};
+
+class PlayerStateBlock : public PlayerStateInterface {
     public:
         void enter(Player &player) override;
         void input(Player &player, InputEvent inputEvent) override;
