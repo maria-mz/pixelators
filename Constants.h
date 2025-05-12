@@ -14,6 +14,8 @@ namespace Constants
     constexpr const char* FILE_SPRITE_PLAYER_ATTACK = "assets/player-attack-spritesheet.png";
     constexpr const char* FILE_SPRITE_PLAYER_KNOCKBACK = "assets/player-knockback-spritesheet.png";
     constexpr const char* FILE_SPRITE_PLAYER_BLOCK = "assets/player-block-spritesheet.png";
+    constexpr const char* FILE_SPRITE_HEALTH_BAR_OK = "assets/health-bar-ok-sprite.png";
+    constexpr const char* FILE_SPRITE_HEALTH_BAR_LOW = "assets/health-bar-low-sprite.png";
 }
 
 #endif
