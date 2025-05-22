@@ -121,6 +121,8 @@ class Player
 {
     public:
         static constexpr float SPEED = 0.35; // Pixels per ms
+        static constexpr int MAX_HEALTH = 100;
+        static constexpr int HIT_DMG = 10;
 
         Player();
         ~Player();
@@ -128,6 +130,8 @@ class Player
         void setPosition(float x, float y);
         void setVelocity(float x, float y);
         void setScale(int scale);
+
+        int getHealth();
 
         void input(InputEvent inputEvent);
         void update(int deltaTime);
@@ -166,6 +170,8 @@ class Player
         Vector2D<float> m_velocity;
         Transform m_transform;
         Direction m_direction;
+
+        int m_health;
 
         bool m_isImmune;
 

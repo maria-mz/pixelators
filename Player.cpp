@@ -586,6 +586,8 @@ Player::Player()
     m_transform.height = 32;
     m_transform.scale = 1;
 
+    m_health = MAX_HEALTH;
+
     m_animationManager = makeAnimationManager();
 
     m_stateObject->enter(*this);
@@ -799,8 +801,19 @@ bool Player::maybeRegisterHit(const Player &opponent)
         updateDirection((opponent.getDirection() == Direction::Left) ? Direction::Right : Direction::Left);
         changeState(PlayerState::Knockback);
 
+        m_health -= HIT_DMG;
+        if (m_health < 0)
+        {
+            m_health = 0;
+        }
+
         return true;
     }
 
     return false;
+}
+
+int Player::getHealth()
+{
+    return m_health;
 }

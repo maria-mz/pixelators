@@ -9,6 +9,7 @@
 #include "Resources.h"
 #include "Sprite.h"
 #include "Text.h"
+#include "Utils/Utils.h"
 
 enum class HealthBarType
 {
@@ -75,7 +76,11 @@ class HealthBar
 
                 for (int i = chunks - filledChunks; i < chunks; i++)
                 {
-                    if (i == chunks - filledChunks)
+                    if (i == 0)
+                    {
+                        SDL_RenderCopy(Resources::renderer, texture, &HEALTH_BAR_FILL_EDGE_RECT, &dstRect);
+                    }
+                    else if (i == chunks - filledChunks)
                     {
                         SDL_RenderCopy(Resources::renderer, texture, &HEALTH_BAR_BG_BODY_RECT, &dstRect);
                         SDL_RenderCopy(Resources::renderer, texture, &HEALTH_BAR_FILL_EDGE_RECT, &dstRect);
@@ -92,7 +97,11 @@ class HealthBar
             {
                 for (int i = 0; i < filledChunks; i++)
                 {
-                    if (i == filledChunks - 1)
+                    if (i == chunks - 1)
+                    {
+                        SDL_RenderCopyEx(Resources::renderer, texture, &HEALTH_BAR_FILL_EDGE_RECT, &dstRect, 0.0, NULL, SDL_FLIP_HORIZONTAL);
+                    }
+                    else if (i == filledChunks - 1)
                     {
                         SDL_RenderCopyEx(Resources::renderer, texture, &HEALTH_BAR_BG_BODY_RECT, &dstRect, 0.0, NULL, SDL_FLIP_HORIZONTAL);
                         SDL_RenderCopyEx(Resources::renderer, texture, &HEALTH_BAR_FILL_EDGE_RECT, &dstRect, 0.0, NULL, SDL_FLIP_HORIZONTAL);
@@ -146,9 +155,9 @@ class HealthBar
             if (health != m_health || maxHealth != m_maxHealth)
             {
                 char text[16];
-                int textOulinePx = 1;
                 std::snprintf(text, sizeof(text), "%d / %d", health, maxHealth);
 
+                int textOulinePx = 1;
                 m_text->setText(text, textOulinePx);
 
                 m_health = health;
@@ -162,11 +171,6 @@ class HealthBar
             int textY = barY + paddingVerticalPx;
 
             m_text->render(textX, textY);
-        }
-
-        int computeHP(int health, int maxHealth)
-        {
-            return health * 100.0f / maxHealth;
         }
 
         HealthBarType m_type;

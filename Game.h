@@ -14,6 +14,8 @@
 #include "NetworkManager.h"
 #include "Netcode.h"
 #include "FrameTimer.h"
+#include "HealthBar.h"
+#include "Utils/Utils.h"
 
 // Uncomment to see bounding, hit, and hurt boxes
 #define DEBUG_MODE
@@ -24,6 +26,8 @@ const Vector2D PLAYER_1_SPAWN_POSITION(180, 200);
 const Vector2D PLAYER_2_SPAWN_POSITION(540, 200);
 
 constexpr const int MIN_OPPONENT_LAG_FRAMES = 1;
+
+constexpr const int LOW_HP = 30;
 
 class Game
 {
@@ -53,6 +57,8 @@ class Game
 
         std::shared_ptr<Player> m_player;
         std::shared_ptr<Player> m_opponent;
+        std::shared_ptr<HealthBar> m_playerHealthBar;
+        std::shared_ptr<HealthBar> m_opponentHealthBar;
 
         bool m_isHost;
 

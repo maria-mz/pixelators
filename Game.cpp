@@ -45,6 +45,12 @@ bool Game::initWindow()
         }
     }
 
+    if (TTF_Init() < 0)
+    {
+        LOG_ERROR("Couldn't initialize SDL TTF: %s", SDL_GetError());
+        success = false;
+    }
+
     return success;
 }
 
@@ -65,6 +71,8 @@ bool Game::initRenderer()
     {
         SDL_SetRenderDrawColor(m_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
+        Resources::renderer = m_renderer;
+
         if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
         {
             LOG_ERROR("Couldn't initialize SDL_image: %s", SDL_GetError());
@@ -84,8 +92,15 @@ bool Game::initTextures()
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK, m_renderer)
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_OK, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_LOW, m_renderer)
     )
+    {
+        success = false;
+    }
+
+    if (!Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 8, m_renderer))
     {
         success = false;
     }
@@ -114,6 +129,9 @@ bool Game::init(bool isHost)
     {
         m_player = std::unique_ptr<Player>(new Player());
         m_opponent = std::unique_ptr<Player>(new Player());
+
+        m_playerHealthBar = std::shared_ptr<HealthBar>(new HealthBar());
+        m_opponentHealthBar = std::shared_ptr<HealthBar>(new HealthBar());
 
         m_network = std::shared_ptr<NetworkManager>(new NetworkManager(m_isHost));
         m_network->init();
@@ -191,6 +209,18 @@ void Game::render()
         renderPlayer(m_opponent);
         renderPlayer(m_player);
     }
+
+    if (computeHP(m_player->getHealth(), m_player->MAX_HEALTH) <= LOW_HP)
+    {
+        m_playerHealthBar->setType(HealthBarType::Low);
+    }
+    if (computeHP(m_opponent->getHealth(), m_opponent->MAX_HEALTH) <= LOW_HP)
+    {
+        m_opponentHealthBar->setType(HealthBarType::Low);
+    }
+
+    m_playerHealthBar->render(m_player->getHealth(), m_player->MAX_HEALTH, 16, 32, 304, 16, false);
+    m_opponentHealthBar->render(m_opponent->getHealth(), m_opponent->MAX_HEALTH, 400, 32, 304, 16, true);
 
     SDL_RenderPresent(m_renderer);
 }
