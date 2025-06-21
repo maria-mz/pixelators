@@ -6,6 +6,10 @@ void NetworkManager::init()
     {
         m_server = std::unique_ptr<NetServer>(new NetServer(SERVER_PORT));
         m_server->start();
+
+        m_server->setOnClientConnect([this](ClientID clientID) {
+            m_opponentClientID = clientID;
+        });
     }
     else
     {
@@ -68,17 +72,11 @@ bool NetworkManager::receiveOpponentMsg(GameMessage &msg)
 
     if (m_isHost)
     {
-        // uh.. opponent client id hardcoded for now
-        m_server->recv(10000, netMsg);
+        m_server->recv(m_opponentClientID, netMsg);
     }
     else
     {
         m_client->recv(netMsg);
-    }
-
-    if (netMsg.header.type == NetMessageType::Disconnect)
-    {
-        LOG_INFO("Opponent disconnected");
     }
 
     if (netMsg.header.type == NetMessageType::Data)

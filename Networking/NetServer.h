@@ -33,6 +33,9 @@ class NetServer
         void disconnectClient(ClientID clientID);
         void removeClient(ClientID clientID);
 
+        void setOnClientConnect(std::function<void(ClientID)> callback) { m_onClientConnect = std::move(callback); }
+        void setOnClientDisconnect(std::function<void(ClientID)> callback) { m_onClientDisconnect = std::move(callback); }
+
     private:
         void accept();
 
@@ -46,6 +49,9 @@ class NetServer
 
         ClientID m_nextNewClientID = 10000;
         ClientID getNewClientID();
+
+        std::function<void(ClientID)> m_onClientConnect = nullptr;
+        std::function<void(ClientID)> m_onClientDisconnect = nullptr;
 };
 
 #endif

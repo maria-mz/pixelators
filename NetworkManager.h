@@ -45,6 +45,9 @@ class NetworkManager
         std::unique_ptr<NetServer> m_server;
 
         bool m_isHost;
+
+        // Details relevant for server:
+        int m_opponentClientID;
 };
 
 #endif

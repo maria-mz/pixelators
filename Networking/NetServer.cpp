@@ -27,6 +27,11 @@ void NetServer::accept()
 
                 NetMessage msg{NetMessageType::ConnectOk, ConnectOkBody{clientID}};
                 newClient->send(msg);
+
+                if (m_onClientConnect)
+                {
+                    m_onClientConnect(clientID);
+                }
             }
 
             accept();
@@ -53,6 +58,11 @@ void NetServer::disconnectClient(ClientID clientID)
         try
         {
             client->m_socket.close();
+
+            if (m_onClientDisconnect)
+            {
+                m_onClientDisconnect(client->m_id);
+            }
         }
         catch(const std::system_error& e)
         {
@@ -151,6 +161,11 @@ bool NetServer::recv(ClientID clientID, NetMessage &msg)
         ok = client->recv(msg);
     }
 
+    if (msg.header.type == NetMessageType::Disconnect)
+    {
+        removeClient(clientID);
+    }
+
     return ok;
 }
 
@@ -164,6 +179,11 @@ bool NetServer::blockingRecv(ClientID clientID, NetMessage &msg)
     if (client)
     {
         ok = client->blockingRecv(msg);
+    }
+
+    if (msg.header.type == NetMessageType::Disconnect)
+    {
+        removeClient(clientID);
     }
 
     return ok;
