@@ -177,9 +177,47 @@ void Game::handleOpponentNetMsgs()
 
     while (m_network->receiveOpponentMsg(opponentMsg))
     {
-        // Right now all game messages are update messages
-        m_opponentUpdatesBuffer.push_back(opponentMsg);
+        if (opponentMsg.type == GameMessageType::MovementUpdate)
+        {
+            m_opponentMovementUpdatesBuffer.push_back(opponentMsg.data.movementUpdate);
+        }
+        else if (opponentMsg.type == GameMessageType::ServerRegisteredHit)
+        {
+            HitRegistered hitRegistered = opponentMsg.data.hitRegistered;
+
+            if (hitRegistered.hitPlayerID == PLAYER_1_ID)
+            {
+                m_opponent->registerHit(*m_player);
+            }
+            else if (hitRegistered.hitPlayerID == PLAYER_2_ID)
+            {
+                m_player->registerHit(*m_opponent);
+            }
+        }
     }
+}
+
+void Game::sendPlayerMovementUpdate(const MovementUpdate &movementUpdate)
+{
+    GameMessage msg;
+    msg.type = GameMessageType::MovementUpdate;
+    msg.data.movementUpdate = movementUpdate;
+
+    m_network->sendPlayerMsg(msg);
+}
+
+void Game::sendHitRegistered(const HitRegistered &hitRegistered)
+{
+    if (!m_isHost)
+    {
+        throw std::logic_error("Only the host can send ServerRegisteredHit messages");
+    }
+
+    GameMessage msg;
+    msg.type = GameMessageType::ServerRegisteredHit;
+    msg.data.hitRegistered = hitRegistered;
+
+    m_network->sendPlayerMsg(msg);
 }
 
 void Game::renderPlayer(std::shared_ptr<Player> player)
@@ -227,19 +265,24 @@ void Game::render()
 
 void Game::updateOpponent(int deltaTime)
 {
-    GameMessage updateMsg;
+    MovementUpdate movementUpdate;
 
-    while (m_opponentUpdatesBuffer.size() > MIN_OPPONENT_LAG_FRAMES)
+    while (m_opponentMovementUpdatesBuffer.size() > MIN_OPPONENT_LAG_FRAMES)
     {
-        updateMsg = m_opponentUpdatesBuffer.front();
-        m_opponentUpdatesBuffer.pop_front();
+        movementUpdate = m_opponentMovementUpdatesBuffer.front();
+        m_opponentMovementUpdatesBuffer.pop_front();
 
-        if (updateMsg.inputEvent != InputEvent::None)
+        if (movementUpdate.inputEvent != InputEvent::None)
         {
-            m_opponent->input(updateMsg.inputEvent);
+            m_opponent->input(movementUpdate.inputEvent);
         }
 
-        m_opponentNetcode.updateNetState(updateMsg);
+        if (movementUpdate.direction != m_opponent->getDirection())
+        {
+            m_opponent->updateDirection(movementUpdate.direction);
+        }
+
+        m_opponentNetcode.updateNetState(movementUpdate);
     }
 
     m_opponent->update(deltaTime);
@@ -254,7 +297,8 @@ void Game::run()
 
     FrameTimer frameTimer(GAME_TICK_RATE_MS);
 
-    GameMessage playerUpdateMsg;
+    MovementUpdate playerMovementUpdate;
+    HitRegistered hitRegistered;
 
     SDL_Event event;
     InputEvent playerInputEvent;
@@ -284,19 +328,35 @@ void Game::run()
         m_player->update(frameTimer.getDeltaTime());
         updateOpponent(frameTimer.getDeltaTime());
 
-        // TODO: The server should determine if the hit is registered .. !
-        // Maybe the opponent should still be "knocked back" but once
-        // the server registers the hit, update the opponent's health?
-        m_player->maybeRegisterHit(*m_opponent);
-        m_opponent->maybeRegisterHit(*m_player);
+        bool isPlayerHit = m_player->isHitBy(*m_opponent);
+        bool isOpponentHit = m_opponent->isHitBy(*m_player);
 
-        playerUpdateMsg.posX = m_player->m_position.x;
-        playerUpdateMsg.posY = m_player->m_position.y;
-        playerUpdateMsg.velX = m_player->m_velocity.x;
-        playerUpdateMsg.velY = m_player->m_velocity.y;
-        playerUpdateMsg.inputEvent = playerInputEvent;
+        if (m_isHost)
+        {
+            if (isPlayerHit)
+            {
+                m_player->registerHit(*m_opponent);
 
-        m_network->sendPlayerMsg(playerUpdateMsg);
+                hitRegistered.hitPlayerID = PLAYER_1_ID;
+                sendHitRegistered(hitRegistered);
+            }
+            if (isOpponentHit)
+            {
+                m_opponent->registerHit(*m_player);
+
+                hitRegistered.hitPlayerID = PLAYER_2_ID;
+                sendHitRegistered(hitRegistered);
+            }
+        }
+
+        playerMovementUpdate.posX = m_player->m_position.x;
+        playerMovementUpdate.posY = m_player->m_position.y;
+        playerMovementUpdate.velX = m_player->m_velocity.x;
+        playerMovementUpdate.velY = m_player->m_velocity.y;
+        playerMovementUpdate.inputEvent = playerInputEvent;
+        playerMovementUpdate.direction = m_player->getDirection();
+
+        sendPlayerMovementUpdate(playerMovementUpdate);
 
         render();
 

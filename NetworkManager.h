@@ -16,14 +16,38 @@
 constexpr const char *SERVER_HOST = "127.0.0.1";
 constexpr int SERVER_PORT = 8080;
 
-struct GameMessage
+
+enum class GameMessageType : uint8_t
+{
+    Unknown = 0,
+    MovementUpdate,
+    ServerRegisteredHit
+};
+
+struct MovementUpdate
 {
     float posX;
     float posY;
     float velX;
     float velY;
     InputEvent inputEvent;
+    Direction direction;
 };
+
+struct HitRegistered
+{
+    int hitPlayerID;
+};
+
+struct GameMessage
+{
+    GameMessageType type;
+    union {
+        MovementUpdate movementUpdate;
+        HitRegistered hitRegistered;
+    } data;
+};
+
 
 class NetworkManager
 {

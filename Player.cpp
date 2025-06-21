@@ -410,12 +410,12 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
 {
     std::vector<Frame> idleAnimationFrames = {
         {
-            32,                                                                    // entityWidth
-            32,                                                                    // entityHeight
-            {10, 7, 13, 16},                                                       // entityBoundingBox
-            {0, 0, 0, 0},                                                          // entityHitBox
-            {8, 5, 17, 20},                                                        // entityHurtBox
-            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 0), 15)   // textureClip
+            32, // entityWidth
+            32, // entityHeight
+            {10, 7, 13, 16}, // entityBoundingBox
+            {0, 0, 0, 0}, // entityHitBox
+            {8, 5, 17, 20}, // entityHurtBox
+            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 1), 15), // textureClip
         },
         {
             32,
@@ -423,7 +423,7 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
             {10, 7, 13, 16},
             {0, 0, 0, 0},
             {8, 5, 17, 20},
-            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 1), 15),
+            scaleRect(createClipFromSpriteSheet(32, 32, 0, 0, 32, 32, 0, 0), 15)
         },
     };
 
@@ -562,7 +562,7 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
         },
     };
 
-    Animation idleAnimation = Animation(4, idleAnimationFrames);
+    Animation idleAnimation = Animation(3, idleAnimationFrames);
     Animation runningAnimation = Animation(9, runningAnimationFrames);
     Animation attackAnimation = Animation(8, attackAnimationFrames, false);
     Animation knockbackAnimation = Animation(5, knockbackAnimationFrames, false);
@@ -579,17 +579,11 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
 }
 
 Player::Player()
+    : m_stateObject(new PlayerStateIdle()),
+      m_transform{32, 32, 1},
+      m_health(MAX_HEALTH),
+      m_animationManager(makeAnimationManager())
 {
-    m_stateObject = new PlayerStateIdle();
-
-    m_transform.width = 32;
-    m_transform.height = 32;
-    m_transform.scale = 1;
-
-    m_health = MAX_HEALTH;
-
-    m_animationManager = makeAnimationManager();
-
     m_stateObject->enter(*this);
 }
 
@@ -791,26 +785,19 @@ bool Player::isHitBy(const Player &opponent) const
     SDL_Rect playerHurtBox = transformBoxToRenderSpace(getHurtBox());
     SDL_Rect opponentHitBox = opponent.transformBoxToRenderSpace(opponent.getHitBox());
 
-    return SDL_HasIntersection(&playerHurtBox, &opponentHitBox);
+    return SDL_HasIntersection(&playerHurtBox, &opponentHitBox) && !m_isImmune;
 }
 
-bool Player::maybeRegisterHit(const Player &opponent)
+void Player::registerHit(const Player &opponent)
 {
-    if (isHitBy(opponent) && !m_isImmune)
+    updateDirection((opponent.getDirection() == Direction::Left) ? Direction::Right : Direction::Left);
+    changeState(PlayerState::Knockback);
+
+    m_health -= HIT_DMG;
+    if (m_health < 0)
     {
-        updateDirection((opponent.getDirection() == Direction::Left) ? Direction::Right : Direction::Left);
-        changeState(PlayerState::Knockback);
-
-        m_health -= HIT_DMG;
-        if (m_health < 0)
-        {
-            m_health = 0;
-        }
-
-        return true;
+        m_health = 0;
     }
-
-    return false;
 }
 
 int Player::getHealth()

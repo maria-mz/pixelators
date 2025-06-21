@@ -15,7 +15,7 @@ struct NetPlayerData
 class Netcode
 {
     public:
-        void updateNetState(GameMessage &updateMsg);
+        void updateNetState(MovementUpdate &movementUpdate);
 
         bool isPlayerDesynced(Player &player);
         void syncPlayerWithNetState(Player &player);

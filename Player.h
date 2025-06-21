@@ -148,7 +148,7 @@ class Player
         void updateDirection(Direction direction);
 
         bool isHitBy(const Player &opponent) const;
-        bool maybeRegisterHit(const Player &opponent);
+        void registerHit(const Player &opponent);
 
     // private:
         AnimationManager<PlayerState> makeAnimationManager() const;

@@ -1,11 +1,11 @@
 #include "Netcode.h"
 
-void Netcode::updateNetState(GameMessage &updateMsg)
+void Netcode::updateNetState(MovementUpdate &movementUpdate)
 {
-    m_netPlayerData.position.x = updateMsg.posX;
-    m_netPlayerData.position.y = updateMsg.posY;
-    m_netPlayerData.velocity.x = updateMsg.velX;
-    m_netPlayerData.velocity.y = updateMsg.velY;
+    m_netPlayerData.position.x = movementUpdate.posX;
+    m_netPlayerData.position.y = movementUpdate.posY;
+    m_netPlayerData.velocity.x = movementUpdate.velX;
+    m_netPlayerData.velocity.y = movementUpdate.velY;
 }
 
 void Netcode::setNetPlayerData(NetPlayerData data)

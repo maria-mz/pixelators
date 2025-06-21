@@ -25,6 +25,9 @@ constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per frame (~60 updates per
 const Vector2D PLAYER_1_SPAWN_POSITION(180, 200);
 const Vector2D PLAYER_2_SPAWN_POSITION(540, 200);
 
+constexpr const int PLAYER_1_ID = 1;
+constexpr const int PLAYER_2_ID = 2;
+
 constexpr const int MIN_OPPONENT_LAG_FRAMES = 1;
 
 constexpr const int LOW_HP = 30;
@@ -49,6 +52,9 @@ class Game
         void handleOpponentNetMsgs();
         void updateOpponent(int deltaTime);
 
+        void sendPlayerMovementUpdate(const MovementUpdate &movementUpdate);
+        void sendHitRegistered(const HitRegistered &hitRegistered);
+
         void render();
         void renderPlayer(std::shared_ptr<Player> player);
 
@@ -64,7 +70,7 @@ class Game
 
         std::shared_ptr<NetworkManager> m_network;
         Netcode m_opponentNetcode;
-        std::deque<GameMessage> m_opponentUpdatesBuffer;
+        std::deque<MovementUpdate> m_opponentMovementUpdatesBuffer;
 };
 
 #endif
