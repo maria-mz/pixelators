@@ -231,6 +231,18 @@ void Game::renderPlayer(std::shared_ptr<Player> player)
 
 void Game::render()
 {
+    switch (m_gameState)
+    {
+        case GameState::Gameplay:
+        {
+            renderGameplay();
+            break;
+        }
+    }
+}
+
+void Game::renderGameplay()
+{
     SDL_SetRenderDrawColor(m_renderer, 67, 67, 67, 255);
     SDL_RenderClear(m_renderer);
 
@@ -289,25 +301,86 @@ void Game::updateOpponent(int deltaTime)
     m_opponentNetcode.syncPlayerWithNetState(*m_opponent);
 }
 
+void Game::handleEvent(const SDL_Event &event)
+{
+    switch (m_gameState)
+    {
+        case GameState::Gameplay:
+        {
+            InputEvent playerInputEvent = SDLEventTranslator::translate(event);
+            if (playerInputEvent != InputEvent::None)
+            {
+                m_playerInputEvent = playerInputEvent;
+                m_player->input(m_playerInputEvent);
+            }
+
+            break;
+        }
+    }
+}
+
+void Game::update(const int deltaTime)
+{
+    switch (m_gameState)
+    {
+        case GameState::Gameplay:
+        {
+            handleOpponentNetMsgs();
+
+            m_player->update(deltaTime);
+            updateOpponent(deltaTime);
+
+            bool isPlayerHit = m_player->isHitBy(*m_opponent);
+            bool isOpponentHit = m_opponent->isHitBy(*m_player);
+
+            if (m_isHost)
+            {
+                HitRegistered hitRegistered;
+
+                if (isPlayerHit)
+                {
+                    m_player->registerHit(*m_opponent);
+
+                    hitRegistered.hitPlayerID = PLAYER_1_ID;
+                    sendHitRegistered(hitRegistered);
+                }
+                if (isOpponentHit)
+                {
+                    m_opponent->registerHit(*m_player);
+
+                    hitRegistered.hitPlayerID = PLAYER_2_ID;
+                    sendHitRegistered(hitRegistered);
+                }
+            }
+
+            MovementUpdate playerMovementUpdate;
+            playerMovementUpdate.posX = m_player->m_position.x;
+            playerMovementUpdate.posY = m_player->m_position.y;
+            playerMovementUpdate.velX = m_player->m_velocity.x;
+            playerMovementUpdate.velY = m_player->m_velocity.y;
+            playerMovementUpdate.inputEvent = m_playerInputEvent;
+            playerMovementUpdate.direction = m_player->getDirection();
+
+            sendPlayerMovementUpdate(playerMovementUpdate);
+
+            break;
+        }
+    }
+}
+
 void Game::run()
 {
     spawnPlayers();
 
     bool quit = false;
-
+    SDL_Event event;
     FrameTimer frameTimer(GAME_TICK_RATE_MS);
 
-    MovementUpdate playerMovementUpdate;
-    HitRegistered hitRegistered;
-
-    SDL_Event event;
     InputEvent playerInputEvent;
 
     while (!quit)
     {
         frameTimer.startFrame();
-
-        playerInputEvent = InputEvent::None;
 
         while (SDL_PollEvent(&event) != 0)
         {
@@ -315,51 +388,20 @@ void Game::run()
             {
                 quit = true;
             }
+
             playerInputEvent = SDLEventTranslator::translate(event);
             if (playerInputEvent != InputEvent::None)
             {
-                m_player->input(playerInputEvent);
+                m_playerInputEvent = playerInputEvent;
+                m_player->input(m_playerInputEvent);
                 break; // Input only one player event per frame
             }
         }
 
-        handleOpponentNetMsgs();
-
-        m_player->update(frameTimer.getDeltaTime());
-        updateOpponent(frameTimer.getDeltaTime());
-
-        bool isPlayerHit = m_player->isHitBy(*m_opponent);
-        bool isOpponentHit = m_opponent->isHitBy(*m_player);
-
-        if (m_isHost)
-        {
-            if (isPlayerHit)
-            {
-                m_player->registerHit(*m_opponent);
-
-                hitRegistered.hitPlayerID = PLAYER_1_ID;
-                sendHitRegistered(hitRegistered);
-            }
-            if (isOpponentHit)
-            {
-                m_opponent->registerHit(*m_player);
-
-                hitRegistered.hitPlayerID = PLAYER_2_ID;
-                sendHitRegistered(hitRegistered);
-            }
-        }
-
-        playerMovementUpdate.posX = m_player->m_position.x;
-        playerMovementUpdate.posY = m_player->m_position.y;
-        playerMovementUpdate.velX = m_player->m_velocity.x;
-        playerMovementUpdate.velY = m_player->m_velocity.y;
-        playerMovementUpdate.inputEvent = playerInputEvent;
-        playerMovementUpdate.direction = m_player->getDirection();
-
-        sendPlayerMovementUpdate(playerMovementUpdate);
-
+        update(frameTimer.getDeltaTime());
         render();
 
+        m_playerInputEvent = InputEvent::None;
         frameTimer.endFrame();
     }
 }

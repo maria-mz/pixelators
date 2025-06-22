@@ -25,7 +25,7 @@ enum class InputEvent {
 class SDLEventTranslator
 {
     public:
-        static InputEvent translate(SDL_Event &SDLEvent)
+        static InputEvent translate(const SDL_Event &SDLEvent)
         {
             InputEvent inputEvent = InputEvent::None;
 

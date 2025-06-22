@@ -32,6 +32,12 @@ constexpr const int MIN_OPPONENT_LAG_FRAMES = 1;
 
 constexpr const int LOW_HP = 30;
 
+enum class GameState
+{
+    Menu,
+    Gameplay
+};
+
 class Game
 {
     public:
@@ -55,7 +61,11 @@ class Game
         void sendPlayerMovementUpdate(const MovementUpdate &movementUpdate);
         void sendHitRegistered(const HitRegistered &hitRegistered);
 
+        void handleEvent(const SDL_Event &event);
+        void update(const int deltaTime);
+
         void render();
+        void renderGameplay();
         void renderPlayer(std::shared_ptr<Player> player);
 
         SDL_Window *m_window;
@@ -66,11 +76,15 @@ class Game
         std::shared_ptr<HealthBar> m_playerHealthBar;
         std::shared_ptr<HealthBar> m_opponentHealthBar;
 
+        InputEvent m_playerInputEvent;
+
         bool m_isHost;
 
         std::shared_ptr<NetworkManager> m_network;
         Netcode m_opponentNetcode;
         std::deque<MovementUpdate> m_opponentMovementUpdatesBuffer;
+
+        GameState m_gameState = GameState::Gameplay;
 };
 
 #endif
