@@ -14,8 +14,9 @@
 #include "NetworkManager.h"
 #include "Netcode.h"
 #include "FrameTimer.h"
-#include "HealthBar.h"
 #include "Utils/Utils.h"
+#include "MenuUI.h"
+#include "GameplayUI.h"
 
 // Uncomment to see bounding, hit, and hurt boxes
 #define DEBUG_MODE
@@ -65,6 +66,7 @@ class Game
         void update(const int deltaTime);
 
         void render();
+        void renderMenu();
         void renderGameplay();
         void renderPlayer(std::shared_ptr<Player> player);
 
@@ -73,8 +75,6 @@ class Game
 
         std::shared_ptr<Player> m_player;
         std::shared_ptr<Player> m_opponent;
-        std::shared_ptr<HealthBar> m_playerHealthBar;
-        std::shared_ptr<HealthBar> m_opponentHealthBar;
 
         InputEvent m_playerInputEvent;
 
@@ -84,7 +84,10 @@ class Game
         Netcode m_opponentNetcode;
         std::deque<MovementUpdate> m_opponentMovementUpdatesBuffer;
 
-        GameState m_gameState = GameState::Gameplay;
+        GameState m_gameState = GameState::Menu;
+
+        MenuUI m_menuUI;
+        GameplayUI m_gameplayUI;
 };
 
 #endif

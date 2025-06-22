@@ -25,7 +25,7 @@ class HealthBar
     const SDL_Rect HEALTH_BAR_BG_BODY_RECT = scaleRect(createClipFromSpriteSheet(8, 8, 2, 2, 4, 4, 1, 1), 15);
 
     public:
-        HealthBar()
+        void initHealthBar()
         {
             TTF_Font *healthTextFont = Resources::fonts.getFont(Constants::FILE_FONT_MAIN, 8);
             SDL_Color healthTextColor = {255, 255, 255};

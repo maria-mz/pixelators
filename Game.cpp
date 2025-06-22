@@ -100,7 +100,10 @@ bool Game::initTextures()
         success = false;
     }
 
-    if (!Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 8, m_renderer))
+    if (
+        !Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 8, m_renderer) ||
+        !Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 18, m_renderer)
+    )
     {
         success = false;
     }
@@ -130,9 +133,6 @@ bool Game::init(bool isHost)
         m_player = std::unique_ptr<Player>(new Player());
         m_opponent = std::unique_ptr<Player>(new Player());
 
-        m_playerHealthBar = std::shared_ptr<HealthBar>(new HealthBar());
-        m_opponentHealthBar = std::shared_ptr<HealthBar>(new HealthBar());
-
         m_network = std::shared_ptr<NetworkManager>(new NetworkManager(m_isHost));
         m_network->init();
 
@@ -143,6 +143,15 @@ bool Game::init(bool isHost)
         {
             success = m_network->connectToServer();
         }
+
+        m_menuUI.init();
+        m_menuUI.setOnPlayButtonClick([this]() {
+            m_gameState = GameState::Gameplay;
+        });
+
+        m_gameplayUI.init();
+        m_gameplayUI.setLowHP(LOW_HP);
+        m_gameplayUI.setMaxHealth(Player::MAX_HEALTH);
     }
 
     return success;
@@ -231,25 +240,35 @@ void Game::renderPlayer(std::shared_ptr<Player> player)
 
 void Game::render()
 {
+    SDL_SetRenderDrawColor(m_renderer, 67, 67, 67, 255);
+    SDL_RenderClear(m_renderer);
+
     switch (m_gameState)
     {
+        case GameState::Menu:
+        {
+            renderMenu();
+            break;
+        }
         case GameState::Gameplay:
         {
             renderGameplay();
             break;
         }
     }
+
+    SDL_RenderPresent(m_renderer);
+}
+
+void Game::renderMenu()
+{
+    m_menuUI.render();
 }
 
 void Game::renderGameplay()
 {
-    SDL_SetRenderDrawColor(m_renderer, 67, 67, 67, 255);
-    SDL_RenderClear(m_renderer);
-
-    if (
-        m_opponent->getState() == PlayerState::Attack &&
-        m_player->getState() != PlayerState::Attack
-    )
+    if (m_opponent->getState() == PlayerState::Attack &&
+        m_player->getState() != PlayerState::Attack)
     {
         renderPlayer(m_player);
         renderPlayer(m_opponent);
@@ -260,19 +279,14 @@ void Game::renderGameplay()
         renderPlayer(m_player);
     }
 
-    if (computeHP(m_player->getHealth(), m_player->MAX_HEALTH) <= LOW_HP)
+    if (m_isHost)
     {
-        m_playerHealthBar->setType(HealthBarType::Low);
+        m_gameplayUI.render(m_player->getHealth(), m_opponent->getHealth());
     }
-    if (computeHP(m_opponent->getHealth(), m_opponent->MAX_HEALTH) <= LOW_HP)
+    else
     {
-        m_opponentHealthBar->setType(HealthBarType::Low);
+        m_gameplayUI.render(m_opponent->getHealth(), m_player->getHealth());
     }
-
-    m_playerHealthBar->render(m_player->getHealth(), m_player->MAX_HEALTH, 16, 32, 304, 16, false);
-    m_opponentHealthBar->render(m_opponent->getHealth(), m_opponent->MAX_HEALTH, 400, 32, 304, 16, true);
-
-    SDL_RenderPresent(m_renderer);
 }
 
 void Game::updateOpponent(int deltaTime)
@@ -314,6 +328,11 @@ void Game::handleEvent(const SDL_Event &event)
                 m_player->input(m_playerInputEvent);
             }
 
+            break;
+        }
+        case GameState::Menu:
+        {
+            m_menuUI.handleEvent(event);
             break;
         }
     }
@@ -389,13 +408,8 @@ void Game::run()
                 quit = true;
             }
 
-            playerInputEvent = SDLEventTranslator::translate(event);
-            if (playerInputEvent != InputEvent::None)
-            {
-                m_playerInputEvent = playerInputEvent;
-                m_player->input(m_playerInputEvent);
-                break; // Input only one player event per frame
-            }
+            handleEvent(event);
+            break;
         }
 
         update(frameTimer.getDeltaTime());
