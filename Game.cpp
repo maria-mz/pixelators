@@ -196,11 +196,11 @@ void Game::handleOpponentNetMsgs()
 
             if (hitRegistered.hitPlayerID == PLAYER_1_ID)
             {
-                m_opponent->registerHit(*m_player);
+                m_opponent->registerHitTaken(*m_player);
             }
             else if (hitRegistered.hitPlayerID == PLAYER_2_ID)
             {
-                m_player->registerHit(*m_opponent);
+                m_player->registerHitTaken(*m_opponent);
             }
         }
     }
@@ -267,6 +267,10 @@ void Game::renderMenu()
 
 void Game::renderGameplay()
 {
+    SDL_Rect groundRect = {0, 360, Constants::WINDOW_WIDTH, 120};
+    SDL_SetRenderDrawColor(Resources::renderer, 50, 50, 50, 255);
+    SDL_RenderFillRect(Resources::renderer, &groundRect);
+
     if (m_opponent->getState() == PlayerState::Attack &&
         m_player->getState() != PlayerState::Attack)
     {
@@ -358,14 +362,14 @@ void Game::update(const int deltaTime)
 
                 if (isPlayerHit)
                 {
-                    m_player->registerHit(*m_opponent);
+                    m_player->registerHitTaken(*m_opponent);
 
                     hitRegistered.hitPlayerID = PLAYER_1_ID;
                     sendHitRegistered(hitRegistered);
                 }
                 if (isOpponentHit)
                 {
-                    m_opponent->registerHit(*m_player);
+                    m_opponent->registerHitTaken(*m_player);
 
                     hitRegistered.hitPlayerID = PLAYER_2_ID;
                     sendHitRegistered(hitRegistered);

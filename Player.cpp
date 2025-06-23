@@ -788,7 +788,7 @@ bool Player::isHitBy(const Player &opponent) const
     return SDL_HasIntersection(&playerHurtBox, &opponentHitBox) && !m_isImmune;
 }
 
-void Player::registerHit(const Player &opponent)
+void Player::registerHitTaken(const Player &opponent)
 {
     updateDirection((opponent.getDirection() == Direction::Left) ? Direction::Right : Direction::Left);
     changeState(PlayerState::Knockback);

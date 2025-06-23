@@ -23,8 +23,8 @@
 
 constexpr const int GAME_TICK_RATE_MS = 16; // ~16 ms per frame (~60 updates per second)
 
-const Vector2D PLAYER_1_SPAWN_POSITION(180, 200);
-const Vector2D PLAYER_2_SPAWN_POSITION(540, 200);
+const Vector2D PLAYER_1_SPAWN_POSITION(180, 245);
+const Vector2D PLAYER_2_SPAWN_POSITION(540, 245);
 
 constexpr const int PLAYER_1_ID = 1;
 constexpr const int PLAYER_2_ID = 2;

@@ -77,10 +77,8 @@ class Animation
         , m_isDone(false)
         , m_repeats(repeats)
         {
-            assert(fps > 0 && "FPS must be > 0");
             assert(!frames.empty() && "Animation must have at least one frame");
-
-            m_timePerFrame = 1000 / fps;
+            setFPS(fps);
         }
 
         void setFlip(SDL_RendererFlip flip)
@@ -91,6 +89,12 @@ class Animation
             {
                 frame.setFlip(flip);
             }
+        }
+
+        void setFPS(int fps)
+        {
+            assert(fps > 0 && "FPS must be > 0");
+            m_timePerFrame = 1000 / fps;
         }
 
         Frame getCurrentFrame()

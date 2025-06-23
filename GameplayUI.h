@@ -37,8 +37,8 @@ class GameplayUI
                 m_playerTwoHealthBar.setType(HealthBarType::Low);
             }
 
-            m_playerOneHealthBar.render(playerOneHealth, m_maxHealth, 16, 32, 304, 16, false);
-            m_playerTwoHealthBar.render(playerTwoHealth, m_maxHealth, 400, 32, 304, 16, true);
+            m_playerOneHealthBar.render(playerOneHealth, m_maxHealth, 16, 20, 304, 16, false);
+            m_playerTwoHealthBar.render(playerTwoHealth, m_maxHealth, 400, 20, 304, 16, true);
         }
 
     private:
