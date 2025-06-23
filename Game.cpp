@@ -94,7 +94,8 @@ bool Game::initTextures()
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_OK, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_LOW, m_renderer)
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_LOW, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_CURSOR, m_renderer)
     )
     {
         success = false;
@@ -152,6 +153,11 @@ bool Game::init(bool isHost)
         m_gameplayUI.init();
         m_gameplayUI.setLowHP(LOW_HP);
         m_gameplayUI.setMaxHealth(Player::MAX_HEALTH);
+
+        SDL_Surface* surface = IMG_Load(Constants::FILE_CURSOR);
+        SDL_Cursor* cursor = SDL_CreateColorCursor(surface, 13, 11);
+        SDL_SetCursor(cursor);
+        SDL_FreeSurface(surface);
     }
 
     return success;
