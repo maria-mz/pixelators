@@ -19,6 +19,21 @@ class Button {
             m_text = std::move(text);
         }
 
+        void setColor(SDL_Color color)
+        {
+            m_color = color;
+        }
+
+        void setOnHoverIn(std::function<void()> callback)
+        {
+            m_onHoverIn = std::move(callback);
+        }
+
+        void setOnHoverOut(std::function<void()> callback)
+        {
+            m_onHoverOut = std::move(callback);
+        }
+
         void setOnClick(std::function<void()> callback)
         {
             m_onClick = std::move(callback);
@@ -36,7 +51,26 @@ class Button {
         }
 
         void handleEvent(const SDL_Event& e) {
-            if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+            if (e.type == SDL_MOUSEMOTION)
+            {
+                int mx = e.motion.x;
+                int my = e.motion.y;
+                bool wasHovered = m_isHover;
+
+                m_isHover = (mx >= m_rect.x && mx <= m_rect.x + m_rect.w &&
+                             my >= m_rect.y && my <= m_rect.y + m_rect.h);
+
+                if (!wasHovered && m_isHover && m_onHoverIn)
+                {
+                    m_onHoverIn();
+                }
+                else if (wasHovered && !m_isHover && m_onHoverOut)
+                {
+                    m_onHoverOut();
+                }
+
+            }
+            else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
             {
                 int mx = e.button.x;
                 int my = e.button.y;
@@ -56,7 +90,11 @@ class Button {
         SDL_Color m_color;
         std::unique_ptr<Text> m_text;
 
+        bool m_isHover;
+
         std::function<void()> m_onClick = nullptr;
+        std::function<void()> m_onHoverIn = nullptr;
+        std::function<void()> m_onHoverOut = nullptr;
 };
 
 #endif

@@ -54,6 +54,13 @@ class MenuUI
 
             m_playButton = Button(x, y, w, h, buttonColor);
             m_playButton.setText(std::move(text));
+
+            m_playButton.setOnHoverIn([this]() {
+                m_playButton.setColor({100, 100, 100});
+            });
+            m_playButton.setOnHoverOut([this]() {
+                m_playButton.setColor({0, 0, 0});
+            });
         }
 
         Button m_playButton;
