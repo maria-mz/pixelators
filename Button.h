@@ -12,26 +12,38 @@ class Button {
     public:
         Button() {}
 
-        Button(int x, int y, int w, int h, SDL_Color color) : m_rect({x, y, w, h}), m_color(color) {}
+        Button(int x, int y, int width, int height)
+        : m_rect({x, y, width, height})
+        , m_mainColor{60, 60, 60, 255}
+        , m_hoverColor{90, 90, 90, 255}
+        , m_shadowColor{20, 20, 20, 100}
+        , m_text(nullptr)
+        , m_isHover(false)
+        , m_isPressed(false)
+        , m_onClick(nullptr) {}
 
-        void setText(std::unique_ptr<Text> text)
+        void setText(std::string text, TextConfig textConfig)
         {
-            m_text = std::move(text);
+            if (!m_text)
+            {
+                m_text = std::make_unique<Text>(textConfig);
+            }
+            m_text->setText(text);
         }
 
-        void setColor(SDL_Color color)
+        void setMainColor(SDL_Color color)
         {
-            m_color = color;
+            m_mainColor = color;
         }
 
-        void setOnHoverIn(std::function<void()> callback)
+        void setHoverColor(SDL_Color color)
         {
-            m_onHoverIn = std::move(callback);
+            m_hoverColor = color;
         }
 
-        void setOnHoverOut(std::function<void()> callback)
+        void setShadowColor(SDL_Color color)
         {
-            m_onHoverOut = std::move(callback);
+            m_shadowColor = color;
         }
 
         void setOnClick(std::function<void()> callback)
@@ -40,61 +52,92 @@ class Button {
         }
 
         void render() {
-            SDL_SetRenderDrawColor(Resources::renderer, m_color.r, m_color.g, m_color.b, 255);
-            SDL_RenderFillRect(Resources::renderer, &m_rect);
+            SDL_Rect renderRect = m_rect;
+
+            if (!m_isPressed)
+            {
+                SDL_Rect shadowRect = {m_rect.x, m_rect.y + 4, m_rect.w, m_rect.h};
+                SDL_SetRenderDrawBlendMode(Resources::renderer, SDL_BLENDMODE_BLEND);
+                SDL_SetRenderDrawColor(Resources::renderer, m_shadowColor.r, m_shadowColor.g, m_shadowColor.b, 100);
+                SDL_RenderFillRect(Resources::renderer, &shadowRect);
+            }
+            else
+            {
+                renderRect.y += 4;
+            }
+
+            if (m_isHover)
+            {
+                SDL_SetRenderDrawColor(Resources::renderer, m_hoverColor.r, m_hoverColor.g, m_hoverColor.b, 255);
+            }
+            else
+            {
+                SDL_SetRenderDrawColor(Resources::renderer, m_mainColor.r, m_mainColor.g, m_mainColor.b, 255);
+            }
+
+            SDL_RenderFillRect(Resources::renderer, &renderRect);
 
             if (m_text)
             {
-                m_text->render(m_rect.x + (m_rect.w - m_text->getWidth()) / 2,
-                               m_rect.y + (m_rect.h - m_text->getHeight()) / 2);
+                m_text->render(renderRect.x + (renderRect.w - m_text->getWidth()) / 2,
+                               renderRect.y + (renderRect.h - m_text->getHeight()) / 2);
             }
         }
 
         void handleEvent(const SDL_Event& e) {
             if (e.type == SDL_MOUSEMOTION)
             {
-                int mx = e.motion.x;
-                int my = e.motion.y;
+                SDL_Point mouse{e.motion.x, e.motion.y};
                 bool wasHovered = m_isHover;
 
-                m_isHover = (mx >= m_rect.x && mx <= m_rect.x + m_rect.w &&
-                             my >= m_rect.y && my <= m_rect.y + m_rect.h);
-
-                if (!wasHovered && m_isHover && m_onHoverIn)
-                {
-                    m_onHoverIn();
-                }
-                else if (wasHovered && !m_isHover && m_onHoverOut)
-                {
-                    m_onHoverOut();
-                }
-
+                m_isHover = SDL_PointInRect(&mouse, &m_rect);
             }
-            else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+
+            if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
             {
-                int mx = e.button.x;
-                int my = e.button.y;
-                if (mx >= m_rect.x && mx <= m_rect.x + m_rect.w &&
-                    my >= m_rect.y && my <= m_rect.y + m_rect.h)
+                SDL_Point mouse{e.button.x, e.button.y};
+                if (SDL_PointInRect(&mouse, &m_rect))
+                {
+                    m_isPressed = true;
+                }
+            }
+            else if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_LEFT)
+            {
+                SDL_Point mouse{e.button.x, e.button.y};
+                if (m_isPressed && SDL_PointInRect(&mouse, &m_rect))
                 {
                     if (m_onClick)
                     {
                         m_onClick();
                     }
                 }
+                m_isPressed = false;
             }
+        }
+
+        int getX()
+        {
+            return m_rect.x;
+        }
+
+        int getY()
+        {
+            return m_rect.y;
         }
 
     private:
         SDL_Rect m_rect;
-        SDL_Color m_color;
+
+        SDL_Color m_mainColor;
+        SDL_Color m_hoverColor;
+        SDL_Color m_shadowColor;
+
         std::unique_ptr<Text> m_text;
 
         bool m_isHover;
+        bool m_isPressed;
 
-        std::function<void()> m_onClick = nullptr;
-        std::function<void()> m_onHoverIn = nullptr;
-        std::function<void()> m_onHoverOut = nullptr;
+        std::function<void()> m_onClick;
 };
 
 #endif

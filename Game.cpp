@@ -103,6 +103,7 @@ bool Game::initTextures()
 
     if (
         !Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 8, m_renderer) ||
+        !Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 12, m_renderer) ||
         !Resources::fonts.loadFont(Constants::FILE_FONT_MAIN, 18, m_renderer)
     )
     {
@@ -146,9 +147,9 @@ bool Game::init(bool isHost)
         }
 
         m_menuUI.init();
-        m_menuUI.setOnPlayButtonClick([this]() {
-            m_gameState = GameState::Gameplay;
-        });
+        // m_menuUI.setOnPlayButtonClick([this]() {
+        //     m_gameState = GameState::Gameplay;
+        // });
 
         m_gameplayUI.init();
         m_gameplayUI.setLowHP(LOW_HP);

@@ -27,10 +27,11 @@ class HealthBar
     public:
         void initHealthBar()
         {
-            TTF_Font *healthTextFont = Resources::fonts.getFont(Constants::FILE_FONT_MAIN, 8);
-            SDL_Color healthTextColor = {255, 255, 255};
+            TextConfig textConfig{Resources::fonts.getFont(Constants::FILE_FONT_MAIN, 8),
+                                  {255, 255, 255},
+                                  1};
 
-            m_text = std::make_unique<Text>(healthTextFont, healthTextColor);
+            m_text = std::make_unique<Text>(textConfig);
             m_type = HealthBarType::Ok;
         }
 
@@ -157,8 +158,7 @@ class HealthBar
                 char text[16];
                 std::snprintf(text, sizeof(text), "%d / %d", health, maxHealth);
 
-                int textOulinePx = 1;
-                m_text->setText(text, textOulinePx);
+                m_text->setText(text);
 
                 m_health = health;
                 m_maxHealth = maxHealth;
