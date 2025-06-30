@@ -5,13 +5,12 @@
 
 #include "SDL2/SDL.h"
 
-#include "Constants.h"
-#include "Resources.h"
-#include "Sprite.h"
+#include "../Constants.h"
+#include "../Resources.h"
+#include "../Utils/Utils.h"
 #include "Text.h"
 #include "Button.h"
 #include "TextField.h"
-#include "Utils/Utils.h"
 
 class MenuUI
 {

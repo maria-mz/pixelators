@@ -5,8 +5,8 @@
 #include <string>
 #include <SDL2/SDL.h>
 
+#include "../Resources.h"
 #include "Text.h"
-#include "Resources.h"
 
 class Button {
     public:

@@ -5,11 +5,11 @@
 
 #include "SDL2/SDL.h"
 
-#include "Constants.h"
-#include "Resources.h"
-#include "Sprite.h"
+#include "../Constants.h"
+#include "../Resources.h"
+#include "../Sprite.h"
+#include "../Utils/Utils.h"
 #include "Text.h"
-#include "Utils/Utils.h"
 
 enum class HealthBarType
 {

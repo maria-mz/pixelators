@@ -15,8 +15,8 @@
 #include "Netcode.h"
 #include "FrameTimer.h"
 #include "Utils/Utils.h"
-#include "MenuUI.h"
-#include "GameplayUI.h"
+#include "UI/MenuUI.h"
+#include "UI/GameplayUI.h"
 
 // Uncomment to see bounding, hit, and hurt boxes
 #define DEBUG_MODE

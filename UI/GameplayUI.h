@@ -3,8 +3,8 @@
 
 #include "SDL2/SDL.h"
 
+#include "../Utils/Utils.h"
 #include "HealthBar.h"
-#include "Utils/Utils.h"
 
 class GameplayUI
 {
