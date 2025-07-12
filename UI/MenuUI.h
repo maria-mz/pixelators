@@ -23,10 +23,20 @@ class MenuUI
             initIPAddressHeader();
         }
 
-        // void setOnPlayButtonClick(std::function<void()> callback)
-        // {
-        //     m_playButton.setOnClick(callback);
-        // }
+        void setOnHostGameButtonClick(std::function<void()> callback)
+        {
+            m_hostGameButton.setOnClick(callback);
+        }
+
+        void setOnJoinGameButtonClick(std::function<void()> callback)
+        {
+            m_joinGameButton.setOnClick(callback);
+        }
+
+        std::string getIPAddressFromTextField()
+        {
+            return m_hostIPTextField.getText();
+        }
 
         void handleEvent(const SDL_Event &e)
         {
@@ -108,7 +118,8 @@ class MenuUI
             m_hostIPTextField.setTextHint("192.168.0.1");
         }
 
-        // std::function<void()> m_onPlayButtonClick = nullptr;
+        std::function<void()> m_onHostGameButtonClick = nullptr;
+        std::function<void()> m_onJoinGameButtonClick = nullptr;
 
         Button m_hostGameButton;
         Button m_joinGameButton;

@@ -12,9 +12,7 @@
 
 #include "Input.h"
 
-// TODO: Hardcoded for now
-constexpr const char *SERVER_HOST = "127.0.0.1";
-constexpr int SERVER_PORT = 8080;
+constexpr int SERVER_PORT = 53791;
 
 
 enum class GameMessageType : uint8_t
@@ -52,11 +50,11 @@ struct GameMessage
 class NetworkManager
 {
     public:
-        explicit NetworkManager(bool isHost) : m_isHost(isHost) {}
+        void setIsHost(bool isHost);
 
-        void init();
+        void startServer();
+        bool connectToServer(std::string serverIP);
 
-        bool connectToServer(int maxAttempts = 3, int waitBetweenAttempts_ms = 1000);
         bool isConnectedToServer();
 
         void shutdown();

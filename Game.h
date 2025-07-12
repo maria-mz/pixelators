@@ -44,7 +44,7 @@ class Game
     public:
         Game();
 
-        bool init(bool isHost);
+        bool init();
         void run();
 
         ~Game();

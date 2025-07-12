@@ -18,7 +18,9 @@ class NetServer
 {
     public:
         NetServer(int port)
-        : m_acceptor(m_ioContext, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)) {}
+        : m_acceptor(m_ioContext,
+                     // binds to 0.0.0.0:<port>
+                     asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)) {}
         ~NetServer();
 
         void start();

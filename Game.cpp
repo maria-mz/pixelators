@@ -113,10 +113,8 @@ bool Game::initTextures()
     return success;
 }
 
-bool Game::init(bool isHost)
+bool Game::init()
 {
-    m_isHost = isHost;
-
     bool success = false;
 
     if (initWindow())
@@ -135,21 +133,31 @@ bool Game::init(bool isHost)
         m_player = std::unique_ptr<Player>(new Player());
         m_opponent = std::unique_ptr<Player>(new Player());
 
-        m_network = std::shared_ptr<NetworkManager>(new NetworkManager(m_isHost));
-        m_network->init();
-
-        // If not host, try to connect to the server, probably want a better way
-        // to do this in the future, like user presses a button to join, then
-        // try to connect
-        if (!m_isHost)
-        {
-            success = m_network->connectToServer();
-        }
+        m_network = std::shared_ptr<NetworkManager>(new NetworkManager());
 
         m_menuUI.init();
-        // m_menuUI.setOnPlayButtonClick([this]() {
-        //     m_gameState = GameState::Gameplay;
-        // });
+        m_menuUI.setOnHostGameButtonClick([this]() {
+            m_isHost = true;
+            m_network->setIsHost(true);
+            m_network->startServer();
+            m_gameState = GameState::Gameplay;
+            spawnPlayers();
+        });
+
+        m_menuUI.setOnJoinGameButtonClick([this]() {
+            m_isHost = false;
+            m_network->setIsHost(false);
+            bool isConnected = m_network->connectToServer(m_menuUI.getIPAddressFromTextField());
+            if (isConnected)
+            {
+                m_gameState = GameState::Gameplay;
+                spawnPlayers();
+            }
+            else
+            {
+                LOG_ERROR("Failed to join game");
+            }
+        });
 
         m_gameplayUI.init();
         m_gameplayUI.setLowHP(LOW_HP);

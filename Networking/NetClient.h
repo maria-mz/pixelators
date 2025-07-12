@@ -15,7 +15,7 @@ class NetClient
     public:
         ~NetClient();
 
-        bool connectToServer(std::string host, std::string port);
+        bool connectToServer(std::string ip, std::string port, int timeoutMs = 250);
         bool isConnected();
         void disconnect();
 

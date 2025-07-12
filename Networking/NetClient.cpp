@@ -7,54 +7,83 @@ NetClient::~NetClient()
 }
 
 
-bool NetClient::connectToServer(std::string host, std::string port)
+bool NetClient::connectToServer(std::string ip, std::string port, int timeoutMs)
 {
-    bool success = true;
+    LOG_INFO("Connecting to server at %s:%s", ip.c_str(), port.c_str());
 
-    LOG_INFO("Connecting to server at %s:%s", host.c_str(), port.c_str());
+    asio::ip::tcp::resolver resolver(m_ioContext);
+    asio::steady_timer timer(m_ioContext);
+    asio::ip::tcp::socket socket(m_ioContext);
 
-    try
+    bool isConnected = false;
+    std::error_code ec;
+
+    asio::ip::make_address(ip, ec);
+    if (ec)
     {
-        m_connection = NetConnection::create(m_ioContext);
-
-        asio::ip::tcp::resolver resolver(m_ioContext);
-        asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, port);
-
-        asio::connect(m_connection->m_socket, endpoints);
+        LOG_ERROR("Invalid IP format");
+        return false;
     }
-    catch (std::exception &e)
-    {
-        success = false;
-        LOG_ERROR("Couldn't to connect to server: %s", e.what());
 
-        if (m_connection->m_socket.is_open())
+    asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(ip, port, ec);
+    if (ec)
+    {
+        LOG_ERROR("Resolve failed: %s", ec.message().c_str());
+        return false;
+    }
+
+    asio::async_connect(socket,
+                        endpoints,
+                        [&](const std::error_code& connectEc, const asio::ip::tcp::endpoint&)
+                        {
+                            if (!connectEc)
+                            {
+                                isConnected = true;
+                            }
+                            ec = connectEc;
+                            timer.cancel();
+                        });
+
+    timer.expires_after(std::chrono::milliseconds(timeoutMs));
+    timer.async_wait([&](const std::error_code& timerEc)
+                    {
+                        if (!timerEc && !isConnected)
+                        {
+                            ec = asio::error::timed_out;
+                            socket.cancel();
+                        }
+                    });
+
+    m_ioContext.run();
+    m_ioContext.restart();
+
+    if (!isConnected)
+    {
+        LOG_ERROR("Connect failed: %s", ec.message().c_str());
+        return false;
+    }
+
+    m_connection = NetConnection::create(m_ioContext);
+    m_connection->m_socket = std::move(socket);
+    m_connection->startReadLoop();
+
+    m_contextThread = std::thread(
+        [this]()
         {
-            m_connection->m_socket.close();
-        }
-    }
-
-    if (success)
-    {
-        m_connection->startReadLoop();
-
-        m_contextThread = std::thread(
-            [this]()
+            try
             {
-                try
-                {
-                    LOG_INFO("ASIO context starting");
-                    m_ioContext.run();
-                    LOG_INFO("ASIO context stopped");
-                }
-                catch (const std::system_error& e)
-                {
-                    // Socket already closed
-                }
+                LOG_INFO("ASIO context starting");
+                m_ioContext.run();
+                LOG_INFO("ASIO context stopped");
             }
-        );
-    }
+            catch (const std::system_error& e)
+            {
+                // Socket already closed
+            }
+        }
+    );
 
-    return success;
+    return true;
 }
 
 

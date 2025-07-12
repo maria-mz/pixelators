@@ -1,42 +1,37 @@
 #include "NetworkManager.h"
 
-void NetworkManager::init()
+void NetworkManager::setIsHost(bool isHost)
 {
-    if (m_isHost)
-    {
-        m_server = std::unique_ptr<NetServer>(new NetServer(SERVER_PORT));
-        m_server->start();
-
-        m_server->setOnClientConnect([this](ClientID clientID) {
-            m_opponentClientID = clientID;
-        });
-    }
-    else
-    {
-        m_client = std::unique_ptr<NetClient>(new NetClient());
-    }
+    m_isHost = isHost;
 }
 
-bool NetworkManager::connectToServer(int maxAttempts, int waitBetweenAttempts_ms)
+void NetworkManager::startServer()
+{
+    if (!m_isHost)
+    {
+        throw std::logic_error("Only a host can start the server");
+    }
+
+    m_server = std::unique_ptr<NetServer>(new NetServer(SERVER_PORT));
+    m_server->start();
+
+    m_server->setOnClientConnect([this](ClientID clientID) {
+        m_opponentClientID = clientID;
+    });
+}
+
+bool NetworkManager::connectToServer(std::string serverIP)
 {
     if (m_isHost)
     {
         throw std::logic_error("A host cannot connect to the server (it is the server)");
     }
-    else
-    {
-        int attempts = 0;
-        while (attempts < maxAttempts && !isConnectedToServer())
-        {
-            LOG_INFO("Trying to connect to server... (Attempt %d)", attempts + 1);
-            m_client->connectToServer(SERVER_HOST, std::to_string(SERVER_PORT));
-            attempts++;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(waitBetweenAttempts_ms));
-        }
+    m_client = std::unique_ptr<NetClient>(new NetClient());
 
-        return isConnectedToServer();
-    }
+    bool isConnected = m_client->connectToServer(serverIP, std::to_string(SERVER_PORT));
+
+    return isConnected;
 }
 
 bool NetworkManager::isConnectedToServer()
