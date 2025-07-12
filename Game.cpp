@@ -88,11 +88,16 @@ bool Game::initTextures()
     bool success = true;
 
     if (
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUNNING, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE_RED, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE_BLUE, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUN_RED, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUN_BLUE, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK_RED, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK_BLUE, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK_RED, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK_BLUE, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK_RED, m_renderer) ||
+        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK_BLUE, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_OK, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_LOW, m_renderer) ||
         !Resources::textures.loadTexture(Constants::FILE_CURSOR, m_renderer)
@@ -141,6 +146,8 @@ bool Game::init()
             m_network->setIsHost(true);
             m_network->startServer();
             m_gameState = GameState::Gameplay;
+            setPlayerTexturesRed(*m_player);
+            setPlayerTexturesBlue(*m_opponent);
             spawnPlayers();
         });
 
@@ -151,6 +158,8 @@ bool Game::init()
             if (isConnected)
             {
                 m_gameState = GameState::Gameplay;
+                setPlayerTexturesBlue(*m_player);
+                setPlayerTexturesRed(*m_opponent);
                 spawnPlayers();
             }
             else

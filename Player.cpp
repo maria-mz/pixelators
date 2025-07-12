@@ -31,6 +31,33 @@ bool InputManager::isKeyPressed(Input action)
     return m_keyState[action];
 }
 
+void setPlayerTexturesRed(Player &player)
+{
+    player.setTexture(PlayerState::Idle,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_IDLE_RED));
+    player.setTexture(PlayerState::Run,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUN_RED));
+    player.setTexture(PlayerState::Attack,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_ATTACK_RED));
+    player.setTexture(PlayerState::Block,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_BLOCK_RED));
+    player.setTexture(PlayerState::Knockback,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK_RED));
+}
+
+void setPlayerTexturesBlue(Player &player)
+{
+    player.setTexture(PlayerState::Idle,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_IDLE_BLUE));
+    player.setTexture(PlayerState::Run,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUN_BLUE));
+    player.setTexture(PlayerState::Attack,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_ATTACK_BLUE));
+    player.setTexture(PlayerState::Block,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_BLOCK_BLUE));
+    player.setTexture(PlayerState::Knockback,
+                      Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK_BLUE));
+}
 
 void PlayerStateIdle::enter(Player &player)
 {
@@ -90,9 +117,9 @@ void PlayerStateIdle::exit(Player &player)
     player.m_animationManager.getAnimation(PlayerState::Idle)->reset();
 }
 
-SDL_Texture *PlayerStateIdle::getTexture()
+SDL_Texture *PlayerStateIdle::getTexture(const Player &player)
 {
-    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_IDLE);
+    return player.getTexture(PlayerState::Idle);
 }
 
 std::shared_ptr<Animation> PlayerStateIdle::getAnimation(const Player &player)
@@ -215,9 +242,9 @@ void PlayerStateRun::exit(Player &player)
     player.m_animationManager.getAnimation(PlayerState::Run)->reset();
 }
 
-SDL_Texture *PlayerStateRun::getTexture()
+SDL_Texture *PlayerStateRun::getTexture(const Player &player)
 {
-    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_RUNNING);
+    return player.getTexture(PlayerState::Run);
 }
 
 std::shared_ptr<Animation> PlayerStateRun::getAnimation(const Player &player)
@@ -289,9 +316,9 @@ void PlayerStateAttack::exit(Player &player)
     player.m_animationManager.getAnimation(PlayerState::Attack)->reset();
 }
 
-SDL_Texture *PlayerStateAttack::getTexture()
+SDL_Texture *PlayerStateAttack::getTexture(const Player &player)
 {
-    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_ATTACK);
+    return player.getTexture(PlayerState::Attack);
 }
 
 std::shared_ptr<Animation> PlayerStateAttack::getAnimation(const Player &player)
@@ -327,9 +354,9 @@ void PlayerStateKnockback::exit(Player &player)
     player.m_isImmune = false;
 }
 
-SDL_Texture *PlayerStateKnockback::getTexture()
+SDL_Texture *PlayerStateKnockback::getTexture(const Player &player)
 {
-    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK);
+    return player.getTexture(PlayerState::Knockback);
 }
 
 std::shared_ptr<Animation> PlayerStateKnockback::getAnimation(const Player &player)
@@ -395,9 +422,9 @@ void PlayerStateBlock::exit(Player &player)
     player.m_animationManager.getAnimation(PlayerState::Block)->reset();
 }
 
-SDL_Texture *PlayerStateBlock::getTexture()
+SDL_Texture *PlayerStateBlock::getTexture(const Player &player)
 {
-    return Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_BLOCK);
+    return player.getTexture(PlayerState::Block);
 }
 
 std::shared_ptr<Animation> PlayerStateBlock::getAnimation(const Player &player)
@@ -611,6 +638,21 @@ void Player::setScale(int scale)
     m_transform.scale = scale;
 }
 
+void Player::setTexture(const PlayerState state, SDL_Texture *texture)
+{
+    m_textures[state] = texture;
+}
+
+SDL_Texture *Player::getTexture(PlayerState state) const
+{
+    auto it = m_textures.find(state);
+    if (it != m_textures.end())
+    {
+        return it->second;
+    }
+    return nullptr;
+}
+
 void Player::input(InputEvent inputEvent)
 {
     m_inputManager.input(inputEvent);
@@ -663,7 +705,7 @@ void Player::renderPlayer(SDL_Renderer *renderer) const
 
     SDL_RenderCopyEx(
         renderer,
-        m_stateObject->getTexture(),
+        m_stateObject->getTexture(*this),
         &clipRect,
         &renderRect,
         0.0,

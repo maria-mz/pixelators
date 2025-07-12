@@ -34,6 +34,9 @@ enum class PlayerState
     Block
 };
 
+void setPlayerTexturesRed(Player &player);
+void setPlayerTexturesBlue(Player &player);
+
 // Interface for all states
 class PlayerStateInterface
 {
@@ -45,7 +48,7 @@ class PlayerStateInterface
         virtual void update(Player &player, int deltaTime) = 0;
         virtual void exit(Player &player) = 0;
 
-        virtual SDL_Texture *getTexture() = 0;
+        virtual SDL_Texture *getTexture(const Player &player) = 0;
         virtual std::shared_ptr<Animation> getAnimation(const Player &player) = 0;
 };
 
@@ -56,7 +59,7 @@ class PlayerStateIdle : public PlayerStateInterface {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        SDL_Texture *getTexture() override;
+        SDL_Texture *getTexture(const Player &player) override;
         std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
@@ -67,7 +70,7 @@ class PlayerStateRun : public PlayerStateInterface {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        SDL_Texture *getTexture() override;
+        SDL_Texture *getTexture(const Player &player) override;
         std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
@@ -78,7 +81,7 @@ class PlayerStateAttack : public PlayerStateInterface {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        SDL_Texture *getTexture() override;
+        SDL_Texture *getTexture(const Player &player) override;
         std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
@@ -89,7 +92,7 @@ class PlayerStateKnockback : public PlayerStateInterface {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        SDL_Texture *getTexture() override;
+        SDL_Texture *getTexture(const Player &player) override;
         std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
@@ -100,7 +103,7 @@ class PlayerStateBlock : public PlayerStateInterface {
         void update(Player &player, int deltaTime) override;
         void exit(Player &player) override;
 
-        SDL_Texture *getTexture() override;
+        SDL_Texture *getTexture(const Player &player) override;
         std::shared_ptr<Animation> getAnimation(const Player &player) override;
 };
 
@@ -130,6 +133,9 @@ class Player
         void setPosition(float x, float y);
         void setVelocity(float x, float y);
         void setScale(int scale);
+
+        void setTexture(PlayerState state, SDL_Texture *texture);
+        SDL_Texture *getTexture(PlayerState state) const;
 
         int getHealth();
 
@@ -180,6 +186,8 @@ class Player
 
         PlayerState m_currentState;
         PlayerStateInterface *m_stateObject;
+
+        std::map<PlayerState, SDL_Texture*> m_textures;
 };
 
 #endif
