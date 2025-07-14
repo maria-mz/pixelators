@@ -87,23 +87,31 @@ bool Game::initTextures()
 {
     bool success = true;
 
-    if (
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE_RED, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_IDLE_BLUE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUN_RED, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_RUN_BLUE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK_RED, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_ATTACK_BLUE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK_RED, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_KNOCKBACK_BLUE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK_RED, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_PLAYER_BLOCK_BLUE, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_OK, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_SPRITE_HEALTH_BAR_LOW, m_renderer) ||
-        !Resources::textures.loadTexture(Constants::FILE_CURSOR, m_renderer)
-    )
+    std::vector<const char*> textureFiles = {
+        Constants::FILE_SPRITE_PLAYER_IDLE_RED,
+        Constants::FILE_SPRITE_PLAYER_IDLE_BLUE,
+        Constants::FILE_SPRITE_PLAYER_RUN_RED,
+        Constants::FILE_SPRITE_PLAYER_RUN_BLUE,
+        Constants::FILE_SPRITE_PLAYER_ATTACK_RED,
+        Constants::FILE_SPRITE_PLAYER_ATTACK_BLUE,
+        Constants::FILE_SPRITE_PLAYER_KNOCKBACK_RED,
+        Constants::FILE_SPRITE_PLAYER_KNOCKBACK_BLUE,
+        Constants::FILE_SPRITE_PLAYER_BLOCK_RED,
+        Constants::FILE_SPRITE_PLAYER_BLOCK_BLUE,
+        Constants::FILE_SPRITE_PLAYER_PROFILE_RED,
+        Constants::FILE_SPRITE_PLAYER_PROFILE_BLUE,
+        Constants::FILE_SPRITE_HEALTH_BAR_OK,
+        Constants::FILE_SPRITE_HEALTH_BAR_LOW,
+        Constants::FILE_CURSOR
+    };
+
+    for (const auto &file : textureFiles)
     {
-        success = false;
+        if (!Resources::textures.loadTexture(file, m_renderer))
+        {
+            success = false;
+            break;
+        }
     }
 
     if (
@@ -149,6 +157,8 @@ bool Game::init()
             setPlayerTexturesRed(*m_player);
             setPlayerTexturesBlue(*m_opponent);
             spawnPlayers();
+            m_player->updateDirection(Direction::Right);
+            m_opponent->updateDirection(Direction::Left);
         });
 
         m_menuUI.setOnJoinGameButtonClick([this]() {
@@ -161,6 +171,8 @@ bool Game::init()
                 setPlayerTexturesBlue(*m_player);
                 setPlayerTexturesRed(*m_opponent);
                 spawnPlayers();
+                m_player->updateDirection(Direction::Left);
+                m_opponent->updateDirection(Direction::Right);
             }
             else
             {
@@ -210,21 +222,27 @@ void Game::handleOpponentNetMsgs()
 
     while (m_network->receiveOpponentMsg(opponentMsg))
     {
-        if (opponentMsg.type == GameMessageType::MovementUpdate)
+        switch (opponentMsg.type)
         {
-            m_opponentMovementUpdatesBuffer.push_back(opponentMsg.data.movementUpdate);
-        }
-        else if (opponentMsg.type == GameMessageType::ServerRegisteredHit)
-        {
-            HitRegistered hitRegistered = opponentMsg.data.hitRegistered;
-
-            if (hitRegistered.hitPlayerID == PLAYER_1_ID)
+            case GameMessageType::MovementUpdate:
             {
-                m_opponent->registerHitTaken(*m_player);
+                m_opponentMovementUpdatesBuffer.push_back(opponentMsg.data.movementUpdate);
+                break;
             }
-            else if (hitRegistered.hitPlayerID == PLAYER_2_ID)
+            case GameMessageType::ServerRegisteredHit:
             {
-                m_player->registerHitTaken(*m_opponent);
+                HitRegistered hitRegistered = opponentMsg.data.hitRegistered;
+
+                if (hitRegistered.hitPlayerID == PLAYER_1_ID)
+                {
+                    m_opponent->registerHitTaken(*m_player);
+                }
+                else if (hitRegistered.hitPlayerID == PLAYER_2_ID)
+                {
+                    m_player->registerHitTaken(*m_opponent);
+                }
+
+                break;
             }
         }
     }
