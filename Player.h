@@ -124,7 +124,6 @@ class Player
 {
     public:
         static constexpr float SPEED = 0.35; // Pixels per ms
-        static constexpr int MAX_HEALTH = 100;
         static constexpr int HIT_DMG = 10;
 
         Player();

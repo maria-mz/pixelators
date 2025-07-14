@@ -4,44 +4,29 @@
 #include "SDL2/SDL.h"
 
 #include "../Utils/Utils.h"
+#include "../Constants.h"
 #include "HealthBar.h"
 
 class GameplayUI
 {
     public:
-        void init()
-        {
-            m_playerOneHealthBar.initHealthBar();
-            m_playerTwoHealthBar.initHealthBar();
-        }
-
-        void setLowHP(int lowHP)
-        {
-            m_lowHP = lowHP;
-        }
-
-        void setMaxHealth(int maxHealth)
-        {
-            m_maxHealth = maxHealth;
-        }
-
         void render(int playerOneHealth, int playerTwoHealth)
         {
-            if (computeHP(playerOneHealth, m_maxHealth) <= m_lowHP)
+            if (computeHP(playerOneHealth, Constants::PLAYER_MAX_HEALTH) <= Constants::PLAYER_LOW_HP)
             {
                 m_playerOneHealthBar.setType(HealthBarType::Low);
             }
 
-            if (computeHP(playerTwoHealth, m_maxHealth) <= m_lowHP)
+            if (computeHP(playerTwoHealth, Constants::PLAYER_MAX_HEALTH) <= Constants::PLAYER_LOW_HP)
             {
                 m_playerTwoHealthBar.setType(HealthBarType::Low);
             }
 
-            m_playerOneHealthBar.render(playerOneHealth, m_maxHealth, 16, 20, 304, 16, false);
-            m_playerTwoHealthBar.render(playerTwoHealth, m_maxHealth, 400, 20, 304, 16, true);
+            m_playerOneHealthBar.render(playerOneHealth, 20, 20, 300, 20, false);
+            m_playerTwoHealthBar.render(playerTwoHealth, 400, 20, 300, 20, true);
 
-            renderPlayerProfile(25, 35, Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_PROFILE_RED));
-            renderPlayerProfile(630, 35, Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_PROFILE_BLUE), SDL_FLIP_HORIZONTAL);
+            renderPlayerProfile(20, 40, Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_PROFILE_RED));
+            renderPlayerProfile(636, 40, Resources::textures.getTexture(Constants::FILE_SPRITE_PLAYER_PROFILE_BLUE), SDL_FLIP_HORIZONTAL);
         }
 
     private:
@@ -63,9 +48,6 @@ class GameplayUI
 
         HealthBar m_playerOneHealthBar;
         HealthBar m_playerTwoHealthBar;
-
-        int m_lowHP;
-        int m_maxHealth;
 };
 
 #endif

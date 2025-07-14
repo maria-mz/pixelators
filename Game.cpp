@@ -180,10 +180,6 @@ bool Game::init()
             }
         });
 
-        m_gameplayUI.init();
-        m_gameplayUI.setLowHP(LOW_HP);
-        m_gameplayUI.setMaxHealth(Player::MAX_HEALTH);
-
         SDL_Surface* surface = IMG_Load(Constants::FILE_CURSOR);
         SDL_Cursor* cursor = SDL_CreateColorCursor(surface, 12, 8);
         SDL_SetCursor(cursor);

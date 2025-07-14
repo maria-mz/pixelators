@@ -608,7 +608,7 @@ AnimationManager<PlayerState> Player::makeAnimationManager() const
 Player::Player()
     : m_stateObject(new PlayerStateIdle()),
       m_transform{32, 32, 1},
-      m_health(MAX_HEALTH),
+      m_health(Constants::PLAYER_MAX_HEALTH),
       m_animationManager(makeAnimationManager())
 {
     m_stateObject->enter(*this);

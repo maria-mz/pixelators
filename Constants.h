@@ -25,6 +25,10 @@ namespace Constants
     constexpr const char* FILE_SPRITE_HEALTH_BAR_LOW = "assets/health-bar-low-sprite.png";
     constexpr const char* FILE_CURSOR = "assets/cursor.png";
     constexpr const char* FILE_FONT_MAIN = "assets/FFFFORWA.TTF";
+
+    // Game
+    constexpr int PLAYER_MAX_HEALTH = 100;
+    constexpr int PLAYER_LOW_HP = 30;
 }
 
 #endif
